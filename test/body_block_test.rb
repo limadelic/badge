@@ -61,6 +61,12 @@ class BodyBlockTest < Minitest::Test
     assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
   end
 
+  def test_place_drops_whitespace_only_tail
+    markup = Body.block(env, 'main/', false)
+    text = "# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\n\n   \n"
+    assert_equal "# badge\n\n#{markup}", Body.place(text, markup)
+  end
+
   def test_place_at_end_of_file_adds_no_blank_line
     markup = Body.block(env, 'main/', false)
     text = "# badge\n\n#{markup}"

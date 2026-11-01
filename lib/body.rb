@@ -4,6 +4,7 @@ require 'tempfile'
 require 'uri'
 require_relative 'prefix'
 require_relative 'spacing'
+require_relative 'strip'
 
 module Body
   class Error < StandardError; end
@@ -102,7 +103,7 @@ module Body
   end
 
   def strip(text)
-    text.gsub(BLOCK, '').gsub(MARKER, '')
+    Strip.call(text, BLOCK, MARKER)
   end
 
   def insert(text, markup)

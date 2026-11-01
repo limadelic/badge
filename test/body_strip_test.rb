@@ -19,6 +19,19 @@ class BodyStripTest < Minitest::Test
     assert_equal "Top\nBottom", gh.patched
   end
 
+  def test_strip_keeps_one_blank_line_around_text
+    assert_equal "Top\n\nBottom", Body.strip("Top\n\n#{BLOCK_7}\n\nBottom")
+  end
+
+  def test_strip_at_end_of_file_keeps_one_newline
+    assert_equal "# badge\n", Body.strip("# badge\n\n#{BLOCK_7}\n")
+  end
+
+  def test_round_trip_between_text
+    markup = Body.block(env, 'main/', false)
+    assert_equal "Top\n\nBottom", Body.strip(Spacing.join('Top', markup, 'Bottom'))
+  end
+
   def test_removes_every_block
     body = "Top\n<!-- badges-start -->\nold\n<!-- badges-end -->\n" \
            "Middle\n<!-- badges-start -->\nold2\n<!-- badges-end -->\nBottom"
