@@ -8,12 +8,24 @@ module Prefix
   module_function
 
   def compute(env, api = method(:gh))
-    return "#{env.fetch('PR_NUMBER')}/" if env.fetch('EVENT_NAME', '').start_with?('pull_request')
+    return "#{env.fetch('PR_NUMBER')}/" if pull_request?(env)
 
     branch = env.fetch('BRANCH')
     return 'main/' if branch == 'main'
 
     "#{open_pr(env, api) || safe_branch(branch)}/"
+  end
+
+  def prune(env)
+    list = []
+    list << "#{env.fetch('PR_NUMBER')}/" if pull_request?(env)
+    branch = env.fetch('BRANCH')
+    list << "#{safe_branch(branch)}/" unless branch == 'main'
+    list
+  end
+
+  def pull_request?(env)
+    env.fetch('EVENT_NAME', '').start_with?('pull_request')
   end
 
   def safe_branch(branch)
@@ -53,7 +65,7 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   begin
-    puts Prefix.compute(ENV)
+    puts ARGV.first == 'prune' ? Prefix.prune(ENV) : Prefix.compute(ENV)
   rescue Prefix::Error => e
     warn "prefix: #{e.message}"
     exit 1

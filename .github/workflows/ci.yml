@@ -4,6 +4,8 @@ on:
   push:
     branches-ignore: [badges]
   pull_request:
+    types: [opened, reopened, synchronize, closed]
+  delete:
 
 permissions:
   contents: read
@@ -11,6 +13,7 @@ permissions:
 
 jobs:
   body:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,6 +28,7 @@ jobs:
           only-missing: "true"
 
   test:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +41,7 @@ jobs:
       - run: bundle exec rubocop && ruby -Ilib -e 'Dir["test/*_test.rb"].each { |f| require "./#{f}" }'
 
   prefix:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -91,6 +96,7 @@ jobs:
           esac
 
   badge:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -151,7 +157,7 @@ jobs:
 
   site:
     needs: [badge]
-    if: ${{ !cancelled() && needs.badge.result != 'skipped' }}
+    if: ${{ !cancelled() && needs.badge.result != 'skipped' && github.event_name != 'delete' && github.event.action != 'closed' }}
     permissions:
       contents: write
       pages: write
@@ -160,6 +166,7 @@ jobs:
 
   body_after_site:
     needs: [site]
+    if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -190,3 +197,12 @@ jobs:
           body=$(gh api "repos/$REPO/pulls/$number" --jq '.body // ""')
           grep -qF "[![cukes](https://img.shields.io/endpoint?" <<<"$body"
           grep -qF "cacheSeconds=60&v=$RUN_ID)" <<<"$body"
+
+  prune:
+    if: github.event_name == 'delete' || github.event.action == 'closed'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+      pull-requests: write
+    uses: ./.github/workflows/prune.yml

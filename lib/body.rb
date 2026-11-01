@@ -18,8 +18,15 @@ module Body
     case env.fetch('TARGET')
     when 'pr' then pr(env, api)
     when 'readme' then readme(env)
-    else raise Error, "target must be pr or readme: #{env.fetch('TARGET')}"
+    when 'strip' then strip_pr(env, api)
+    else raise Error, "target must be pr, readme or strip: #{env.fetch('TARGET')}"
     end
+  end
+
+  def strip_pr(env, api)
+    path = "repos/#{env.fetch('REPO')}/pulls/#{env.fetch('PR_NUMBER')}"
+    body = api.call(path, '--jq', '.body // ""').chomp
+    patch(api, path, strip(body)) unless strip(body) == body
   end
 
   def pr(env, api)
@@ -114,8 +121,7 @@ module Body
   end
 
   def pages_root(env)
-    owner, name = env.fetch('REPO').split('/')
-    "https://#{owner}.github.io/#{name}/"
+    "https://#{env.fetch('REPO').sub('/', '.github.io/')}/"
   end
 
   def gh(*args)
