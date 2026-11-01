@@ -3,6 +3,7 @@ require 'open3'
 require 'tempfile'
 require 'uri'
 require_relative 'prefix'
+require_relative 'spacing'
 
 module Body
   class Error < StandardError; end
@@ -97,7 +98,7 @@ module Body
     before, found, after = text.partition(BLOCK)
     return if found.empty?
 
-    strip(before) + markup + strip(after)
+    Spacing.join(strip(before), markup, strip(after))
   end
 
   def strip(text)
@@ -109,7 +110,7 @@ module Body
     index = lines.index { |line| line.start_with?('# ') }
     raise Error, 'README.md has no # heading' unless index
 
-    lines.insert(index + 1, "\n", markup).join
+    Spacing.join(lines.take(index + 1).join, markup, lines.drop(index + 1).join)
   end
 
   def patch(api, path, body)

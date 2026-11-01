@@ -10,7 +10,7 @@ class BodyBlockTest < Minitest::Test
            "Middle\n<!-- badges-start -->\nold2\n<!-- badges-end -->\nBottom"
     gh = FakeGh.new(body: body)
     Body.run(pr_event, gh)
-    assert_equal "Top\n#{BLOCK_7}\nMiddle\nBottom", gh.patched
+    assert_equal "Top\n\n#{BLOCK_7}\n\nMiddle\nBottom", gh.patched
   end
 
   def test_orphan_markers_are_removed
@@ -28,7 +28,7 @@ class BodyBlockTest < Minitest::Test
   def test_crlf_block_is_replaced
     gh = FakeGh.new(body: "Top\r\n<!-- badges-start -->\r\nold\r\n<!-- badges-end -->\r\nBottom")
     Body.run(pr_event, gh)
-    assert_equal "Top\r\n#{BLOCK_7}\nBottom", gh.patched
+    assert_equal "Top\n\n#{BLOCK_7}\n\nBottom", gh.patched
   end
 
   def test_only_missing_skips_crlf_block
@@ -52,7 +52,32 @@ class BodyBlockTest < Minitest::Test
     old = BLOCK_7.gsub("\n\n", "\n")
     gh = FakeGh.new(body: "Top\n#{old}\nBottom")
     Body.run(pr_event, gh)
-    assert_equal "Top\n#{BLOCK_7}\nBottom", gh.patched
+    assert_equal "Top\n\n#{BLOCK_7}\n\nBottom", gh.patched
+  end
+
+  def test_place_leaves_one_blank_line_before_text_after_end
+    markup = Body.block(env, 'main/', false)
+    text = "# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n"
+    assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
+  end
+
+  def test_place_at_end_of_file_adds_no_blank_line
+    markup = Body.block(env, 'main/', false)
+    text = "# badge\n\n#{markup}"
+    assert_equal text, Body.place(text, markup)
+  end
+
+  def test_insert_leaves_one_blank_line_before_text
+    markup = Body.block(env, 'main/', false)
+    assert_equal "# badge\n\n#{markup}\nSome text\n", Body.insert("# badge\nSome text\n", markup)
+  end
+
+  def test_second_run_of_place_and_insert_changes_nothing
+    markup = Body.block(env, 'main/', false)
+    placed = Body.place("# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n", markup)
+    assert_equal placed, Body.place(placed, markup)
+    inserted = Body.insert("# badge\nSome text\n", markup)
+    assert_equal inserted, Body.place(inserted, markup)
   end
 
   def test_second_run_changes_nothing
