@@ -42,7 +42,9 @@ jobs:
 
       - name: Check readme with prettier
         working-directory: ${{ runner.temp }}/readme
-        run: npx --yes prettier@3 --check copy/README.md fixture/README.md
+        run: |
+          npx --yes prettier@3.9.10 --check copy/README.md fixture/README.md
+          grep -q cacheSeconds=60 copy/README.md fixture/README.md
 
   prefix:
     if: github.event_name != 'delete' && github.event.action != 'closed'
