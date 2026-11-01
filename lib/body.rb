@@ -3,6 +3,7 @@ require 'open3'
 require 'tempfile'
 require 'uri'
 require_relative 'prefix'
+require_relative 'heading'
 require_relative 'spacing'
 require_relative 'strip'
 
@@ -12,7 +13,7 @@ module Body
   START = '<!-- badges-start -->'.freeze
   STOP = '<!-- badges-end -->'.freeze
   BLOCK = /#{START}.*?#{STOP}\r?\n?/m
-  MARKER = /(?:#{START}|#{STOP})\r?\n?/
+  MARKER = /^(?:#{START}|#{STOP})[ \t]*(?:\n|\z)/
 
   module_function
 
@@ -28,7 +29,7 @@ module Body
   def strip_pr(env, api)
     path = "repos/#{env.fetch('REPO')}/pulls/#{env.fetch('PR_NUMBER')}"
     body = api.call(path, '--jq', '.body // ""').chomp
-    patch(api, path, strip(body)) unless strip(body) == body
+    patch(api, path, strip(body)) unless strip(body) == Spacing.join(body)
   end
 
   def pr(env, api)
@@ -107,10 +108,10 @@ module Body
   end
 
   def insert(text, markup)
-    lines = text.lines
-    index = lines.index { |line| line.start_with?('# ') }
+    index = Heading.index(text)
     raise Error, 'README.md has no # heading' unless index
 
+    lines = text.lines
     Spacing.join(lines.take(index + 1).join, markup, lines.drop(index + 1).join)
   end
 

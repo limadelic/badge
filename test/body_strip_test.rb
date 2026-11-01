@@ -54,6 +54,26 @@ class BodyStripTest < Minitest::Test
     assert_equal "Text\n", gh.patched
   end
 
+  def test_orphan_end_keeps_one_blank_line_around_text
+    assert_equal "Top\n\nBottom\n", Body.strip("Top\n\n<!-- badges-end -->\n\nBottom\n")
+  end
+
+  def test_orphan_start_keeps_one_blank_line_around_text
+    assert_equal "Top\n\nBottom\n", Body.strip("Top\n\n\n<!-- badges-start -->\n\n\nBottom\n")
+  end
+
+  def test_orphan_start_at_end_of_text
+    assert_equal "Top\n", Body.strip("Top\n\n<!-- badges-start -->")
+  end
+
+  def test_text_without_block_ends_with_newline
+    assert_equal "Top\n", Body.strip('Top')
+  end
+
+  def test_marker_inside_a_line_is_kept
+    assert_equal "Text <!-- badges-end --> more\n\nNext\n", Body.strip("Text <!-- badges-end --> more\n\nNext\n")
+  end
+
   def test_body_without_block_is_not_patched
     gh = FakeGh.new(body: 'Hi')
     Body.run(strip_event, gh)

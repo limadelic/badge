@@ -73,6 +73,12 @@ class BodyBlockTest < Minitest::Test
     assert_equal text, Body.place(text, markup)
   end
 
+  def test_insert_skips_hash_lines_inside_fence
+    markup = Body.block(env, 'main/', false)
+    text = "```sh\n# install\n```\n\n# Project\n\nText\n"
+    assert_equal "```sh\n# install\n```\n\n# Project\n\n#{markup}\nText\n", Body.insert(text, markup)
+  end
+
   def test_insert_leaves_one_blank_line_before_text
     markup = Body.block(env, 'main/', false)
     assert_equal "# badge\n\n#{markup}\nSome text\n", Body.insert("# badge\nSome text\n", markup)
