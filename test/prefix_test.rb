@@ -43,6 +43,16 @@ class PrefixTest < Minitest::Test
     assert_equal '12/', Prefix.compute(env, gh_returning('[{"number":12}]'))
   end
 
+  def test_open_pr_lookup_queries_owner_and_branch
+    path = nil
+    api = lambda do |p|
+      path = p
+      '[]'
+    end
+    Prefix.compute(env, api)
+    assert_equal 'repos/limadelic/badge/pulls?state=open&head=limadelic%3Afeat&per_page=100', path
+  end
+
   def test_branch_without_pr_uses_branch
     assert_equal 'feat/', Prefix.compute(env, gh_returning('[]'))
   end

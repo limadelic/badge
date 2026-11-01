@@ -60,7 +60,20 @@ jobs:
           PREFIX: ${{ steps.no_pr.outputs.prefix }}
         run: '[ "$PREFIX" = "no-such-branch/" ]'
 
-      - uses: ./prefix
+      - id: current
+        uses: ./prefix
+
+      - name: Assert current run
+        env:
+          PREFIX: ${{ steps.current.outputs.prefix }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          REF: ${{ github.ref_name }}
+        run: |
+          case "$EVENT" in
+            pull_request*) [ "$PREFIX" = "$PR/" ] ;;
+            push) if [ "$REF" = main ]; then [ -z "$PREFIX" ]; else [ "${PREFIX%/}" != "$PREFIX" ]; fi ;;
+          esac
 
   badge:
     runs-on: ubuntu-latest
