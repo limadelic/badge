@@ -5,16 +5,16 @@ A reusable CI badge unit. A project makes one badge per label in its test job, t
 ## Setup
 
 1. Settings → Pages → Source: GitHub Actions.
-2. Settings → Environments → `github-pages` → Deployment branches and tags: add `main`, `*`, `*/merge` and `refs/pull/*/merge`, so PR merge refs can deploy. With gh, one command per name:
+2. Settings → Environments → `github-pages` → Deployment branches and tags: choose "Selected branches and tags", then add `main`, `*`, `*/merge` and `refs/pull/*/merge`, so PR merge refs can deploy. With gh, one command per name. `OWNER/REPO` is a placeholder: replace it with your owner and repo.
 
-```sh
-gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='main' -f type=branch
-gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='*' -f type=branch
-gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='*/merge' -f type=branch
-gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='refs/pull/*/merge' -f type=branch
-```
+   ```sh
+   gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='main' -f type=branch
+   gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='*' -f type=branch
+   gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='*/merge' -f type=branch
+   gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='refs/pull/*/merge' -f type=branch
+   ```
 
-3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.1`, `secrets: inherit`, and `contents`, `pages`, `id-token` and `pull-requests` write permissions.
+3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.1` and `contents`, `pages`, `id-token` and `pull-requests` write permissions.
 
 ## Use
 
@@ -50,12 +50,12 @@ jobs:
 
       - id: cukes
         if: ${{ !cancelled() }}
-        uses: limadelic/badge/cukes@v1
+        uses: limadelic/badge/cukes@v1.1
         with:
           json: cucumber.json
 
       - if: ${{ !cancelled() }}
-        uses: limadelic/badge/make@v1
+        uses: limadelic/badge/make@v1.1
         with:
           label: cukes
           message: ${{ steps.cukes.outputs.message }}
@@ -74,14 +74,13 @@ jobs:
     uses: limadelic/badge/.github/workflows/badge.yml@v1.1
     with:
       labels: cukes=cucumber.json
-    secrets: inherit
 ```
 
 One `make` step per badge goes in the test job. `labels` has one line per badge, `label=linkfile`; the linkfile is what the badge links to and defaults to `badge.json`.
 
 `if: !cancelled()` keeps the badges running after a red test run, so the badge shows red. Closed pull requests and deleted branches skip the test job, and the call still runs to prune.
 
-The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` write, and pass `secrets: inherit`.
+The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` write.
 
 ## Inputs
 
