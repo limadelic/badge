@@ -94,6 +94,8 @@ The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` wr
 | -------- | -------- | ----------------------------- |
 | `labels` | required | one `label=linkfile` per line |
 
+`make` takes optional `label-color` and `logo-color`. Each is written to `badge.json` as shields `labelColor` and `logoColor`. When not given, the key is left out.
+
 ## What runs
 
 On push and pull request (opened, synchronize):

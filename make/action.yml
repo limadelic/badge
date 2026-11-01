@@ -15,6 +15,14 @@ inputs:
     description: shields named logo
     required: false
     default: ''
+  label-color:
+    description: shields labelColor, the label background color; left out of badge.json when empty
+    required: false
+    default: ''
+  logo-color:
+    description: shields logoColor, the logo color; left out of badge.json when empty
+    required: false
+    default: ''
   files:
     description: paths to copy into the label dir, space separated; a dir is copied recursively under its own name
     required: false
@@ -51,6 +59,8 @@ runs:
         MESSAGE: ${{ inputs.message }}
         COLOR: ${{ inputs.color }}
         LOGO: ${{ inputs.logo }}
+        LABEL_COLOR: ${{ inputs.label-color }}
+        LOGO_COLOR: ${{ inputs.logo-color }}
         FILES: ${{ inputs.files }}
         LINK: ${{ inputs.link }}
       run: ruby "$ACTION_PATH/../lib/make.rb" >> "$GITHUB_OUTPUT"

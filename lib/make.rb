@@ -6,6 +6,8 @@ require_relative 'tree'
 module Make
   class Error < StandardError; end
 
+  OPTIONAL = { 'LOGO' => :namedLogo, 'LABEL_COLOR' => :labelColor, 'LOGO_COLOR' => :logoColor }.freeze
+
   module_function
 
   def run(env, site: "badge-#{env.fetch('LABEL')}/site")
@@ -48,8 +50,11 @@ module Make
 
   def endpoint(env)
     json = { schemaVersion: 1, label: env.fetch('LABEL'), message: env.fetch('MESSAGE'), color: env.fetch('COLOR') }
-    logo = env.fetch('LOGO', '')
-    logo.empty? ? json : json.merge(namedLogo: logo)
+    OPTIONAL.each do |name, key|
+      value = env.fetch(name, '')
+      json[key] = value unless value.empty?
+    end
+    json
   end
 
   def link(env)
