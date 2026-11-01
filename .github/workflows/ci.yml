@@ -26,35 +26,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - id: prefix
+      - id: main_push
         uses: ./prefix
+        with:
+          branch: main
+          event: push
 
-      - name: Assert prefix
+      - name: Assert main push
         env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PREFIX: ${{ steps.prefix.outputs.prefix }}
-          EVENT_NAME: ${{ github.event_name }}
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          case "$EVENT_NAME" in
-            pull_request)
-              expected="$PR_NUMBER/"
-              ;;
-            *)
-              if [ "$BRANCH" = main ]; then
-                expected=""
-              else
-                number=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$BRANCH" --jq '.[0].number // empty')
-                expected="${number:-${BRANCH//\//-}}/"
-              fi
-              ;;
-          esac
-          if [ "$PREFIX" != "$expected" ]; then
-            echo "prefix [$PREFIX] expected [$expected]"
-            exit 1
-          fi
+          PREFIX: ${{ steps.main_push.outputs.prefix }}
+        run: '[ "$PREFIX" = "" ]'
+
+      - id: pr_seven
+        uses: ./prefix
+        with:
+          branch: main
+          event: pull_request
+          pr: 7
+
+      - name: Assert pull request
+        env:
+          PREFIX: ${{ steps.pr_seven.outputs.prefix }}
+        run: '[ "$PREFIX" = "7/" ]'
+
+      - id: no_pr
+        uses: ./prefix
+        with:
+          branch: no-such/branch
+          event: push
+
+      - name: Assert branch without PR
+        env:
+          PREFIX: ${{ steps.no_pr.outputs.prefix }}
+        run: '[ "$PREFIX" = "no-such-branch/" ]'
+
+      - uses: ./prefix
 
   badge:
     runs-on: ubuntu-latest
