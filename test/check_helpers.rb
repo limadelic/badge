@@ -34,6 +34,10 @@ module CheckHelpers
     Reply.new('404', '', {})
   end
 
+  def svg(label)
+    %(<svg role="img" aria-label="#{label}"></svg>)
+  end
+
   def base(extra = {})
     { 'REPO' => REPO, 'BRANCH' => 'main', 'EVENT_NAME' => 'push', 'LABELS' => 'cukes=cucumber.json',
       'TRIES' => '1', 'GAP' => '0' }.merge(extra)
@@ -41,7 +45,7 @@ module CheckHelpers
 
   def routes(extra = {})
     { "repos/#{REPO}/git/trees/badges" => TREE, "repos/#{REPO}/pulls?state=open" => '',
-      "repos/#{REPO}/branches" => "main\n", "repos/#{REPO}/readme?ref=main" => IMG }.merge(extra)
+      "repos/#{REPO}/branches" => "main\n", "repos/#{REPO}/readme" => IMG }.merge(extra)
   end
 
   def served(extra = {})

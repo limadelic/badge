@@ -149,7 +149,7 @@ jobs:
 
   check:
     needs: [site, readme]
-    if: ${{ !cancelled() && needs.site.result == 'success' && github.event_name != 'delete' && github.event.action != 'closed' }}
+    if: ${{ !cancelled() && needs.site.result == 'success' && needs.readme.result != 'failure' && github.event_name != 'delete' && github.event.action != 'closed' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

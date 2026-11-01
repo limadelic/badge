@@ -32,40 +32,79 @@ class Check
   end
 
   class Probe
+    class Miss < StandardError; end
+
     SVG = 'image/svg+xml'.freeze
+    FAILED = /not found|inaccessible|invalid/
+    LABEL = /aria-label="([^"]*)"/
 
     def initialize(http)
       @http = http
     end
 
-    def badge?(url, label)
-      json = badge_json(url, label)
-      return false unless json
-
-      res = @http.call(Remote.shield(url))
-      ok?(res) && res.body.to_s.include?(label) && res.body.to_s.include?(json['message'])
+    def badge(url, label)
+      attempt(url) do
+        json = badge_json(url, label)
+        shield = @http.call(Remote.shield(url))
+        expect(ok?(shield), status(shield))
+        svg = shield.body.to_s
+        expect(svg.include?(label), "shield svg lacks #{label}")
+        expect(svg.include?(json['message']), "shield svg lacks #{json['message']}")
+      end
     end
 
-    def camo?(url)
-      res = @http.call(url)
-      ok?(res) && res['content-type'].to_s.start_with?(SVG)
+    def camo(url)
+      attempt(url) do
+        res = @http.call(url)
+        expect(ok?(res), status(res))
+        expect(res['content-type'].to_s.start_with?(SVG), "content-type #{res['content-type']}")
+        label_ok(res.body.to_s)
+      end
     end
 
     private
 
+    def label_ok(svg)
+      label = svg[LABEL, 1].to_s
+      expect(!FAILED.match?(label), "aria-label \"#{label}\"")
+    end
+
     def badge_json(url, label)
       res = @http.call(url)
-      return unless ok?(res)
+      expect(ok?(res), status(res))
+      json = parse(res.body.to_s)
+      expect(valid?(json, label), "not a #{label} badge json")
+      expect(filled?(json), 'empty badge json')
+      json
+    end
 
-      json = JSON.parse(res.body.to_s)
-      json if valid?(json, label)
+    def parse(text)
+      JSON.parse(text)
     rescue JSON::ParserError
-      nil
+      raise Miss, 'body is not JSON'
     end
 
     def valid?(json, label)
-      json.is_a?(Hash) && json['schemaVersion'] == 1 && json['label'] == label &&
-        json['message'].is_a?(String) && !json['message'].empty? && json['color'].is_a?(String)
+      json.is_a?(Hash) && json.values_at('schemaVersion', 'label') == [1, label]
+    end
+
+    def filled?(json)
+      json.values_at('message', 'color').all?(/\S/)
+    end
+
+    def expect(cond, reason)
+      raise Miss, reason unless cond
+    end
+
+    def attempt(url)
+      yield
+      nil
+    rescue Miss => e
+      "#{url}: #{e.message}"
+    end
+
+    def status(res)
+      res ? "HTTP #{res.code}" : 'no response'
     end
 
     def ok?(res)
@@ -120,7 +159,7 @@ class Check
     end
     return sources unless store.include?('main')
 
-    sources + [['README on main', camo(@api.call("repos/#{repo}/readme?ref=main", '-H', HTML))]]
+    sources + [['README on main', camo(@api.call("repos/#{repo}/readme", '-H', HTML))]]
   end
 
   def missing_images(sources)
@@ -134,12 +173,12 @@ class Check
   def badge_checks(store)
     dirs(store).product(labels).map do |dir, label|
       url = "#{pages}#{dir}#{label}/badge.json"
-      [url, -> { @probe.badge?(url, label) }]
+      -> { @probe.badge(url, label) }
     end
   end
 
   def camo_checks(sources)
-    sources.flat_map { |_label, urls| urls }.map { |url| [url, -> { @probe.camo?(url) }] }
+    sources.flat_map { |_label, urls| urls }.map { |url| -> { @probe.camo(url) } }
   end
 
   def dirs(store)
@@ -148,16 +187,18 @@ class Check
   end
 
   def unsettled(checks)
-    checks.reject { |_url, check| settle(check) }.map(&:first)
+    checks.filter_map { |check| settle(check) }
   end
 
   def settle(check)
-    return true if check.call
+    reason = check.call
+    (tries - 1).times do
+      break unless reason
 
-    (tries - 1).times.any? do
       sleep gap
-      check.call
+      reason = check.call
     end
+    reason
   end
 
   def labels
