@@ -18,8 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           path: badge
 
       - uses: ./badge/body
@@ -46,8 +46,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           path: badge
 
       - uses: ./badge/restore
@@ -84,8 +84,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           path: badge
 
       - uses: ./badge/body
@@ -107,8 +107,8 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           path: badge
 
       - uses: ./badge/body
@@ -128,8 +128,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           path: badge
 
       - uses: ./badge/restore
@@ -162,8 +162,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ job.workflow_repository }}
-          ref: ${{ job.workflow_sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           path: badge
 
       - id: restore

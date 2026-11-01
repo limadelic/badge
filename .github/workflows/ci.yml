@@ -166,6 +166,7 @@ jobs:
     if: ${{ !cancelled() }}
     permissions:
       contents: write
+      actions: read
       pages: write
       id-token: write
       pull-requests: write
