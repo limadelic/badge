@@ -18,7 +18,7 @@ class CheckTest < Minitest::Test
     assert_equal [1, ["#{BADGE}: shield svg lacks 3/3"]], check(http: http)
   end
 
-  def test_shields_error_svg_is_bad
+  def test_shield_svg_lacks_cukes_is_bad
     json = JSON.generate(schemaVersion: 1, label: 'cukes', message: 'invalid', color: 'red')
     http = { BADGE => ok(json), Check::Remote.shield(BADGE) => ok('custom badge: inaccessible') }
     assert_equal [1, ["#{BADGE}: shield svg lacks cukes"]], check(http: http)
@@ -81,6 +81,10 @@ class CheckTest < Minitest::Test
     assert_equal [1, ["#{CAMO}: content-type image/png"]], check(http: { CAMO => ok('x', 'image/png') })
   end
 
+  def test_camo_missing_content_type_is_bad
+    assert_equal [1, ["#{CAMO}: content-type missing"]], check(http: { CAMO => ok('x', nil) })
+  end
+
   def test_camo_http_error_is_bad
     assert_equal [1, ["#{CAMO}: HTTP 404"]], check(http: { CAMO => bad_status })
   end
@@ -112,9 +116,13 @@ class CheckTest < Minitest::Test
     assert_equal [1, [reason]], check(http: { CAMO => ok(svg('cukes: invalid')) })
   end
 
+  def test_pr_body_camo_not_found_label_is_bad
+    http = pr_served(CAMO => ok(svg('cukes: not found')))
+    assert_equal [1, ["#{CAMO}: aria-label \"cukes: not found\""]], check(env: pr_env, api: pr_api, http: http)
+  end
+
   def test_pr_badge_on_pull_request_is_good
-    http = { PR_BADGE => ok(JSON_OK), Check::Remote.shield(PR_BADGE) => ok('cukes 3/3') }
-    assert_equal [0, []], check(env: pr_env, api: pr_api, http: http)
+    assert_equal [0, []], check(env: pr_env, api: pr_api, http: pr_served)
   end
 
   def test_gh_failure_is_bad_not_a_crash

@@ -57,7 +57,7 @@ class Check
       attempt(url) do
         res = @http.call(url)
         expect(ok?(res), status(res))
-        expect(res['content-type'].to_s.start_with?(SVG), "content-type #{res['content-type']}")
+        expect(res['content-type'].to_s.start_with?(SVG), "content-type #{res['content-type'] || 'missing'}")
         label_ok(res.body.to_s)
       end
     end

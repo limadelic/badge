@@ -75,6 +75,10 @@ module CheckHelpers
     { 'EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7', 'BRANCH' => 'unit' }
   end
 
+  def pr_served(extra = {})
+    { PR_BADGE => ok(JSON_OK), Check::Remote.shield(PR_BADGE) => ok('cukes 3/3') }.merge(extra)
+  end
+
   def pr_api
     { "repos/#{REPO}/git/trees/badges" => '{"tree":[{"path":"7","type":"tree"}]}',
       "repos/#{REPO}/pulls?state=open" => "7\n", "repos/#{REPO}/branches" => "unit\n",
