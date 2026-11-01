@@ -11,7 +11,7 @@ module Prefix
     return "#{env.fetch('PR_NUMBER')}/" if env.fetch('EVENT_NAME', '').start_with?('pull_request')
 
     branch = env.fetch('BRANCH')
-    return '' if branch == 'main'
+    return 'main/' if branch == 'main'
 
     "#{open_pr(env, api) || safe_branch(branch)}/"
   end

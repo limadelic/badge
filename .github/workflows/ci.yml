@@ -36,7 +36,7 @@ jobs:
       - name: Assert main push
         env:
           PREFIX: ${{ steps.main_push.outputs.prefix }}
-        run: '[ "$PREFIX" = "" ]'
+        run: '[ "$PREFIX" = "main/" ]'
 
       - id: pr_seven
         uses: ./prefix
@@ -73,7 +73,7 @@ jobs:
         run: |
           case "$EVENT" in
             pull_request*) [ "$PREFIX" = "$PR/" ] ;;
-            push) if [ "$REF" = main ]; then [ -z "$PREFIX" ]; else [ "${PREFIX%/}" != "$PREFIX" ]; fi ;;
+            push) if [ "$REF" = main ]; then [ "$PREFIX" = main/ ]; else [ "${PREFIX%/}" != "$PREFIX" ]; fi ;;
           esac
 
   badge:
@@ -117,10 +117,15 @@ jobs:
       - name: Assert json file
         env:
           DIR: ${{ steps.make.outputs.dir }}
+          PATH_OUT: ${{ steps.make.outputs.path }}
+          LINK: ${{ steps.make.outputs.link }}
         run: |
           expected='{"schemaVersion":1,"label":"cukes","message":"3/3","color":"brightgreen","namedLogo":"cucumber"}'
-          [ "$(cat "$DIR/cukes.json")" = "$expected" ]
+          [ "$(cat "$DIR/badge.json")" = "$expected" ]
           [ -f "$DIR/cucumber.json" ]
+          [ "$DIR" = "badge-cukes/site/$PATH_OUT" ]
+          [ "${PATH_OUT%cukes/}" != "$PATH_OUT" ]
+          [ "$LINK" = "${PATH_OUT}cucumber.json" ]
 
       - uses: actions/download-artifact@v4
         with:

@@ -1,9 +1,9 @@
 name: Make
-description: Write the badge json and files under the prefix in badge-<label>/site, upload that
+description: Write the badge json and files to one dir per label under the prefix in badge-<label>/site, upload that
 
 inputs:
   label:
-    description: badge label, names the json and the artifact
+    description: badge label, names the dir and the artifact
     required: true
   message:
     description: badge message
@@ -16,14 +16,24 @@ inputs:
     required: false
     default: ''
   files:
-    description: paths to copy next to the json, space separated
+    description: paths to copy into the label dir, space separated
+    required: false
+    default: ''
+  link:
+    description: file name in the label dir the badge links to, default first of files else badge.json
     required: false
     default: ''
 
 outputs:
   dir:
-    description: the dir written, badge-<label>/site/<prefix>
+    description: the dir written, badge-<label>/site/<prefix><label>/
     value: ${{ steps.write.outputs.dir }}
+  path:
+    description: the label dir relative to the Pages root, <prefix><label>/
+    value: ${{ steps.write.outputs.path }}
+  link:
+    description: the link file relative to the Pages root, <prefix><label>/<link>
+    value: ${{ steps.write.outputs.link }}
 
 runs:
   using: composite
@@ -42,6 +52,7 @@ runs:
         COLOR: ${{ inputs.color }}
         LOGO: ${{ inputs.logo }}
         FILES: ${{ inputs.files }}
+        LINK: ${{ inputs.link }}
       run: ruby "$ACTION_PATH/../lib/make.rb" >> "$GITHUB_OUTPUT"
 
     - uses: actions/upload-artifact@v4

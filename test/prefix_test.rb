@@ -26,8 +26,8 @@ class PrefixTest < Minitest::Test
     end
   end
 
-  def test_main_is_empty
-    assert_equal '', Prefix.compute(env('BRANCH' => 'main'), NO_GH)
+  def test_main_is_main
+    assert_equal 'main/', Prefix.compute(env('BRANCH' => 'main'), NO_GH)
   end
 
   def test_pull_request_event_uses_pr_number_without_gh

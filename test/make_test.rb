@@ -11,7 +11,7 @@ class MakeTest < Minitest::Test
   def test_writes_endpoint_json_on_main
     Dir.mktmpdir do |site|
       Make.run(env, site: site)
-      json = File.read(File.join(site, 'cukes.json'))
+      json = File.read(File.join(site, 'main', 'cukes', 'badge.json'))
       assert_equal '{"schemaVersion":1,"label":"cukes","message":"3/3","color":"brightgreen"}', json
     end
   end
@@ -19,24 +19,48 @@ class MakeTest < Minitest::Test
   def test_logo_is_named_logo
     Dir.mktmpdir do |site|
       Make.run(env('LOGO' => 'cucumber'), site: site)
-      assert_includes File.read(File.join(site, 'cukes.json')), '"namedLogo":"cucumber"'
+      assert_includes File.read(File.join(site, 'main', 'cukes', 'badge.json')), '"namedLogo":"cucumber"'
     end
   end
 
   def test_pull_request_writes_under_pr_number
     Dir.mktmpdir do |site|
       Make.run(env('EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7'), site: site)
-      assert File.exist?(File.join(site, '7', 'cukes.json'))
+      assert File.exist?(File.join(site, '7', 'cukes', 'badge.json'))
     end
   end
 
-  def test_copies_files_under_prefix
+  def test_copies_files_into_label_dir
     Dir.mktmpdir do |dir|
       report = File.join(dir, 'report.html')
       File.write(report, '<html></html>')
       site = File.join(dir, 'site')
       Make.run(env('FILES' => report, 'EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7'), site: site)
-      assert_equal '<html></html>', File.read(File.join(site, '7', 'report.html'))
+      assert_equal '<html></html>', File.read(File.join(site, '7', 'cukes', 'report.html'))
+    end
+  end
+
+  def test_returns_path_dir_and_default_link
+    Dir.mktmpdir do |dir|
+      report = File.join(dir, 'report.html')
+      File.write(report, '<html></html>')
+      out = Make.run(env('FILES' => report), site: File.join(dir, 'site'))
+      assert_equal 'main/cukes/', out['path']
+      assert_equal File.join(dir, 'site', 'main', 'cukes/'), out['dir']
+      assert_equal 'main/cukes/report.html', out['link']
+    end
+  end
+
+  def test_link_defaults_to_badge_json_without_files
+    Dir.mktmpdir do |site|
+      assert_equal 'main/cukes/badge.json', Make.run(env, site: site)['link']
+    end
+  end
+
+  def test_given_link_wins
+    Dir.mktmpdir do |site|
+      out = Make.run(env('LINK' => 'index.html', 'EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7'), site: site)
+      assert_equal '7/cukes/index.html', out['link']
     end
   end
 
