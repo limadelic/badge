@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'json'
 require 'open3'
 require 'uri'
@@ -28,6 +29,10 @@ module Prefix
     branch = env.fetch('BRANCH')
     list << "#{safe_branch(branch)}/" unless branch == 'main'
     list
+  end
+
+  def drop(env, dir)
+    prune(env).each { |prefix| FileUtils.rm_rf(File.join(dir, prefix)) }
   end
 
   def pull_request?(env)
@@ -71,7 +76,11 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   begin
-    puts ARGV.first == 'prune' ? Prefix.prune(ENV) : Prefix.compute(ENV)
+    case ARGV.first
+    when 'prune' then puts Prefix.prune(ENV)
+    when 'drop' then Prefix.drop(ENV, ARGV.fetch(1))
+    else puts Prefix.compute(ENV)
+    end
   rescue Prefix::Error => e
     warn "prefix: #{e.message}"
     exit 1

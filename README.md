@@ -103,7 +103,7 @@ On push and pull request (opened, synchronize):
 4. `readme`: on push to `main` only, writes the main badge block into `README.md` and pushes it.
 5. `check`: runs only when `site` succeeds. Retries up to 10 times, 15 seconds apart. Fails if a badge json or svg is missing or wrong, if a PR body with a badge block or the README has no badge image, or if the store holds a stale dir.
 
-On closed pull request (same repo) and branch delete: `prune` drops the prefix from the store branch, redeploys Pages, and strips the block from the PR body.
+On closed pull request (same repo) and branch delete: `prune` restores the last Pages deploy, drops the prefix from it, redeploys Pages (kept 90 days), and strips the block from the PR body.
 
 The unit's own scripts run from a checkout of this repo at the same commit that `badge.yml` came from.
 
@@ -112,6 +112,7 @@ The unit's own scripts run from a checkout of this repo at the same commit that 
 | Part        | Kind              | Does                                                     |
 | ----------- | ----------------- | -------------------------------------------------------- |
 | `prefix`    | composite action  | `main/` on main, the PR number on a PR, else the branch  |
+| `restore`   | composite action  | restores the last Pages deploy into `_site`              |
 | `cukes`     | composite action  | `n/total` message and color from a cucumber json         |
 | `make`      | composite action  | writes the badge json and files, uploads `badge-<label>` |
 | `body`      | composite action  | writes the PR body block, or the README block on main    |
