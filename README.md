@@ -1,26 +1,110 @@
 # badge
 
-## Prune
+A reusable CI badge unit. A project makes one badge per label in its test job, then calls one reusable workflow, `badge.yml`, once.
 
-`.github/workflows/prune.yml` is a reusable workflow. It drops the badges of a closed PR or a deleted branch from the store branch, redeploys Pages, and strips the badge block from the PR body. Tag deletes and closed PRs from forks are skipped.
+## Use
 
 ```yaml
+name: CI
+
 on:
+  push:
+    branches-ignore: [badges]
   pull_request:
-    types: [closed]
+    types: [opened, reopened, synchronize, closed]
   delete:
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write
+
 jobs:
-  prune:
-    if: >-
-      (github.event_name == 'delete' && github.event.ref_type == 'branch') ||
-      (github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository)
+  test:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - run: bundle exec cucumber
+
+      - id: cukes
+        if: ${{ !cancelled() }}
+        uses: limadelic/badge/cukes@v1
+        with:
+          json: cucumber.json
+
+      - if: ${{ !cancelled() }}
+        uses: limadelic/badge/make@v1
+        with:
+          label: cukes
+          message: ${{ steps.cukes.outputs.message }}
+          color: ${{ steps.cukes.outputs.color }}
+          logo: cucumber
+          files: cucumber.json
+
+  badges:
+    needs: [test]
+    if: ${{ !cancelled() }}
     permissions:
       contents: write
       pages: write
       id-token: write
       pull-requests: write
-    uses: limadelic/badge/.github/workflows/prune.yml@v1
+    uses: limadelic/badge/.github/workflows/badge.yml@v1
+    with:
+      labels: cukes=cucumber.json
+    secrets: inherit
 ```
 
-Permissions: `contents: write` pushes the store branch, `pages: write` and `id-token: write` deploy Pages, `pull-requests: write` patches the PR body.
+One `make` step per badge goes in the test job. `labels` has one line per badge, `label=linkfile`; the linkfile is what the badge links to and defaults to `badge.json`.
+
+`if: !cancelled()` keeps the badges running after a red test run, so the badge shows red. Closed pull requests and deleted branches skip the test job, and the call still runs to prune.
+
+The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` write, and pass `secrets: inherit`.
+
+## Inputs
+
+`badge.yml`:
+
+| Input | Default | Does |
+|-------|---------|------|
+| `labels` | required | one `label=linkfile` per line |
+| `branch` | `badges` | store branch for the badge json and files |
+
+## What runs
+
+On push and pull request (opened, synchronize):
+
+1. `body`: writes the badge block into the open PR body, only when missing.
+2. `site`: merges every `badge-*` artifact into the store branch, pushes it, deploys Pages. Pages runs one deploy at a time.
+3. `body_after_site`: rewrites the PR body block, now with a cache-busted link.
+4. `readme`: on push to `main` only, writes the main badge block into `README.md` and pushes it.
+5. `check`: retries up to 10 times, 15 seconds apart. Fails if a badge json or svg is missing or wrong, if a PR body or the README has no badge image, or if the store holds a stale dir.
+
+On closed pull request (same repo) and branch delete: `prune` drops the prefix from the store branch, redeploys Pages, and strips the block from the PR body.
+
+The unit's own scripts run from a checkout of this repo at the same commit that `badge.yml` came from.
+
+## Parts
+
+| Part | Kind | Does |
+|------|------|------|
+| `prefix` | composite action | `main/` on main, the PR number on a PR, else the branch |
+| `cukes` | composite action | `n/total` message and color from a cucumber json |
+| `make` | composite action | writes the badge json and files, uploads `badge-<label>` |
+| `body` | composite action | writes the PR body block, or the README block on main |
+| `badge.yml` | reusable workflow | the whole flow above |
+| `check.yml` | reusable workflow | the check alone, `labels` and `branch` inputs |
+
+## Tests
+
+```sh
+bundle exec rubocop && ruby -Ilib -e 'Dir["test/*_test.rb"].each { |f| require "./#{f}" }'
+```

@@ -12,21 +12,6 @@ permissions:
   pull-requests: read
 
 jobs:
-  body:
-    if: github.event_name != 'delete' && github.event.action != 'closed'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./body
-        with:
-          badges: cukes=cucumber.json
-          run-id: ${{ github.run_id }}
-          only-missing: "true"
-
   test:
     if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest
@@ -155,56 +140,15 @@ jobs:
       - name: Assert artifact
         run: diff -r badge-cukes/site downloaded
 
-  site:
+  badges:
     needs: [badge]
-    if: ${{ !cancelled() && needs.badge.result != 'skipped' && github.event_name != 'delete' && github.event.action != 'closed' }}
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/site.yml
-
-  body_after_site:
-    needs: [site]
-    if: github.event_name != 'delete' && github.event.action != 'closed'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./body
-        with:
-          badges: cukes=cucumber.json
-          run-id: ${{ github.run_id }}
-
-      - name: Assert body
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          PR: ${{ github.event.pull_request.number }}
-          BRANCH: ${{ github.head_ref || github.ref_name }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          if [ "$EVENT" = pull_request ]; then
-            number=$PR
-          else
-            number=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$BRANCH" --jq '.[0].number // empty')
-          fi
-          [ -n "$number" ] || exit 0
-          body=$(gh api "repos/$REPO/pulls/$number" --jq '.body // ""')
-          grep -qF "[![cukes](https://img.shields.io/endpoint?" <<<"$body"
-          grep -qF "cacheSeconds=60&v=$RUN_ID)" <<<"$body"
-
-  prune:
-    if: >-
-      (github.event_name == 'delete' && github.event.ref_type == 'branch') ||
-      (github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: ${{ !cancelled() }}
     permissions:
       contents: write
       pages: write
       id-token: write
       pull-requests: write
-    uses: ./.github/workflows/prune.yml
+    uses: ./.github/workflows/badge.yml
+    with:
+      labels: cukes=cucumber.json
+    secrets: inherit
