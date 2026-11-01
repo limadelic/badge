@@ -1,7 +1,7 @@
 module Heading
   module_function
 
-  FENCE = /^```.*?(?:^```[^\n]*|\z)/m
+  FENCE = /^(`{3,}|~{3,}).*?(?:^\1[^\n]*|\z)/m
 
   def index(text)
     masked = text.gsub(FENCE) { |fenced| "\n" * fenced.count("\n") }
