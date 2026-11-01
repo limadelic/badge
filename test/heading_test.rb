@@ -40,4 +40,16 @@ class HeadingTest < Minitest::Test
   def test_backtick_info_string_cannot_hold_backtick
     assert_equal 2, Heading.index("```x``` is inline\n\n# Project\n")
   end
+
+  def test_crlf_backtick_fence
+    assert_equal 4, Heading.index("```sh\r\n# install\r\n```\r\n\r\n# Project\r\nText\r\n")
+  end
+
+  def test_crlf_tilde_fence
+    assert_equal 4, Heading.index("~~~\r\n# x\r\n~~~\r\n\r\n# Project\r\n")
+  end
+
+  def test_lf_fence_with_crlf_closer
+    assert_equal 3, Heading.index("```\n# x\n```\r\n# Project\r\n")
+  end
 end
