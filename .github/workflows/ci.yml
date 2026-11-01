@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   test:
@@ -28,4 +29,29 @@ jobs:
       - id: prefix
         uses: ./prefix
 
-      - run: echo "prefix=[${{ steps.prefix.outputs.prefix }}]"
+      - name: Assert prefix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PREFIX: ${{ steps.prefix.outputs.prefix }}
+          EVENT_NAME: ${{ github.event_name }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          case "$EVENT_NAME" in
+            pull_request)
+              expected="$PR_NUMBER/"
+              ;;
+            *)
+              if [ "$BRANCH" = main ]; then
+                expected=""
+              else
+                number=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$BRANCH" --jq '.[0].number // empty')
+                expected="${number:-${BRANCH//\//-}}/"
+              fi
+              ;;
+          esac
+          if [ "$PREFIX" != "$expected" ]; then
+            echo "prefix [$PREFIX] expected [$expected]"
+            exit 1
+          fi

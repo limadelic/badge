@@ -8,11 +8,16 @@ module Prefix
   module_function
 
   def compute(env, api = method(:gh))
-    branch = env.fetch('BRANCH')
-    return '' if branch == 'main'
     return "#{env.fetch('PR_NUMBER')}/" if env.fetch('EVENT_NAME', '').start_with?('pull_request')
 
-    "#{open_pr(env, api) || branch}/"
+    branch = env.fetch('BRANCH')
+    return '' if branch == 'main'
+
+    "#{open_pr(env, api) || safe_branch(branch)}/"
+  end
+
+  def safe_branch(branch)
+    branch.tr('/', '-')
   end
 
   def open_pr(env, api)
