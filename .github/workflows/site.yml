@@ -45,7 +45,12 @@ jobs:
         with:
           pattern: badge-*
           merge-multiple: true
-          path: site
+          path: ${{ runner.temp }}/badges
+
+      - name: Copy badges from this run
+        run: |
+          test -s "$RUNNER_TEMP/badges/badge.json" || { echo "no badge.json from this run"; exit 1; }
+          cp -R "$RUNNER_TEMP/badges/." site/
 
       - name: Commit and push badges
         working-directory: site
@@ -63,6 +68,9 @@ jobs:
 
       - name: Stage Pages files
         run: rsync -a --exclude .git site/ _site/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4
         with:
