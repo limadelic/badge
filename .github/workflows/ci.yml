@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches-ignore: [badges]
   pull_request:
     types: [opened, reopened, synchronize, closed]
   delete:

@@ -14,7 +14,7 @@ A reusable CI badge unit. A project makes one badge per label in its test job, t
    gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='refs/pull/*/merge' -f type=branch
    ```
 
-3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.1` and `contents`, `pages`, `id-token` and `pull-requests` write permissions and `actions` read.
+3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.2` and `contents`, `pages`, `id-token` and `pull-requests` write permissions and `actions` read.
 
 ## Use
 
@@ -23,7 +23,6 @@ name: CI
 
 on:
   push:
-    branches-ignore: [badges]
   pull_request:
     types: [opened, reopened, synchronize, closed]
   delete:
@@ -51,12 +50,12 @@ jobs:
 
       - id: cukes
         if: ${{ !cancelled() }}
-        uses: limadelic/badge/cukes@v1.1
+        uses: limadelic/badge/cukes@v1.2
         with:
           json: cucumber.json
 
       - if: ${{ !cancelled() }}
-        uses: limadelic/badge/make@v1.1
+        uses: limadelic/badge/make@v1.2
         with:
           label: cukes
           message: ${{ steps.cukes.outputs.message }}
@@ -73,7 +72,7 @@ jobs:
       pages: write
       id-token: write
       pull-requests: write
-    uses: limadelic/badge/.github/workflows/badge.yml@v1.1
+    uses: limadelic/badge/.github/workflows/badge.yml@v1.2
     with:
       labels: cukes=cucumber.json
 ```
