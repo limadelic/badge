@@ -56,7 +56,7 @@ module Body
     lines = badges(env).map do |label, link|
       "[![#{label}](#{shield(env, prefix, label, cache)})](#{url(env, prefix, label, link)})"
     end
-    "#{START}\n#{lines.join("\n")}\n#{STOP}\n"
+    "#{START}\n\n#{lines.join("\n")}\n\n#{STOP}\n"
   end
 
   def shield(env, prefix, label, cache)

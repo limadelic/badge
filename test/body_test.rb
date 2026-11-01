@@ -34,7 +34,7 @@ class BodyTest < Minitest::Test
   def test_replaces_block_in_place
     gh = FakeGh.new(body: "Top\n<!-- badges-start -->\nold\n<!-- badges-end -->\nBottom")
     Body.run(pr_event, gh)
-    assert gh.patched.start_with?("Top\n<!-- badges-start -->\n[![cukes]")
+    assert gh.patched.start_with?("Top\n<!-- badges-start -->\n\n[![cukes]")
     assert gh.patched.end_with?("<!-- badges-end -->\nBottom")
     refute_includes gh.patched, 'old'
   end

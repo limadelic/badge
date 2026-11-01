@@ -42,6 +42,27 @@ class BodyBlockTest < Minitest::Test
     assert_includes markup, '(https://limadelic.github.io/badge/main/cuke%20s/my%20file.json)'
   end
 
+  def test_block_has_blank_line_after_start_and_before_end
+    markup = Body.block(env, 'main/', false)
+    assert markup.start_with?("#{Body::START}\n\n[![cukes]")
+    assert_includes markup, "\n\n#{Body::STOP}\n"
+  end
+
+  def test_old_block_without_blank_lines_is_replaced
+    old = BLOCK_7.gsub("\n\n", "\n")
+    gh = FakeGh.new(body: "Top\n#{old}\nBottom")
+    Body.run(pr_event, gh)
+    assert_equal "Top\n#{BLOCK_7}\nBottom", gh.patched
+  end
+
+  def test_second_run_changes_nothing
+    gh = FakeGh.new(body: "Top\n<!-- badges-start -->\nold\n<!-- badges-end -->\nBottom")
+    Body.run(pr_event, gh)
+    again = FakeGh.new(body: gh.patched)
+    Body.run(pr_event, again)
+    assert_nil again.patched
+  end
+
   def test_main_push_never_patches_pr
     gh = FakeGh.new(body: 'Hi', pulls: '[{"number":12}]')
     Body.run(env('BRANCH' => 'main'), gh)
