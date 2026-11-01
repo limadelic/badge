@@ -10,6 +10,20 @@ permissions:
   pull-requests: read
 
 jobs:
+  body:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./body
+        with:
+          badges: cukes=cucumber.json
+          run-id: ${{ github.run_id }}
+          only-missing: "true"
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -143,3 +157,17 @@ jobs:
       pages: write
       id-token: write
     uses: ./.github/workflows/site.yml
+
+  body_after_site:
+    needs: [site]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./body
+        with:
+          badges: cukes=cucumber.json
+          run-id: ${{ github.run_id }}
