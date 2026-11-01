@@ -89,6 +89,16 @@ class BodyBlockTest < Minitest::Test
     assert_includes markup, 'badge.json&cacheSeconds=60&v=42)'
   end
 
+  def test_empty_run_id_omits_v
+    markup = Body.block(env('RUN_ID' => ''), 'main/')
+    refute_match(/[?&]v=/, markup)
+  end
+
+  def test_unset_run_id_omits_v
+    markup = Body.block(env.except('RUN_ID'), 'main/')
+    refute_match(/[?&]v=/, markup)
+  end
+
   def test_second_run_of_place_and_insert_changes_nothing
     markup = Body.block(env, 'main/')
     placed = Body.place("# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n", markup)

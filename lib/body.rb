@@ -63,8 +63,8 @@ module Body
   end
 
   def shield(env, prefix, label)
-    params = { 'url' => url(env, prefix, label, 'badge.json'), 'cacheSeconds' => 60, 'v' => env.fetch('RUN_ID') }
-    "https://img.shields.io/endpoint?#{URI.encode_www_form(params)}"
+    params = { 'url' => url(env, prefix, label, 'badge.json'), 'cacheSeconds' => 60, 'v' => env.fetch('RUN_ID', '') }
+    "https://img.shields.io/endpoint?#{URI.encode_www_form(params.reject { |_, value| value.to_s.empty? })}"
   end
 
   def url(env, prefix, label, file)

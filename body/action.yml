@@ -34,15 +34,9 @@ runs:
         EVENT_NAME: ${{ github.event_name }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
-      run: ruby "$ACTION_PATH/../lib/body.rb"
-
-    - name: Commit README
-      if: inputs.target == 'readme'
-      shell: bash
       run: |
-        git diff --quiet -- README.md && exit 0
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add README.md
-        git commit -qm "Add badges [skip ci]"
-        git push -q origin HEAD:main || { git pull -q --no-rebase origin main && git push -q origin HEAD:main; }
+        if [ "$TARGET" = readme ]; then
+          bash "$ACTION_PATH/readme.sh"
+        else
+          ruby "$ACTION_PATH/../lib/body.rb"
+        fi

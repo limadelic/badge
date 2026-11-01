@@ -129,6 +129,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    concurrency:
+      group: badges-readme-${{ github.repository }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
