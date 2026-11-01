@@ -199,7 +199,9 @@ jobs:
           grep -qF "cacheSeconds=60&v=$RUN_ID)" <<<"$body"
 
   prune:
-    if: github.event_name == 'delete' || github.event.action == 'closed'
+    if: >-
+      (github.event_name == 'delete' && github.event.ref_type == 'branch') ||
+      (github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository)
     permissions:
       contents: write
       pages: write

@@ -53,6 +53,10 @@ class PrefixTest < Minitest::Test
     assert_equal 'repos/limadelic/badge/pulls?state=open&head=limadelic%3Afeat&per_page=100', path
   end
 
+  def test_pr_number_is_nil_without_open_pr
+    assert_nil Prefix.pr_number(env, gh_returning('[]'))
+  end
+
   def test_branch_without_pr_uses_branch
     assert_equal 'feat/', Prefix.compute(env, gh_returning('[]'))
   end

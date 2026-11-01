@@ -78,6 +78,16 @@ jobs:
             git push -q origin HEAD:"$BRANCH"
           fi
 
+      - name: Strip badge block from PR body
+        if: github.event_name == 'pull_request'
+        working-directory: badge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TARGET: strip
+        run: ruby lib/body.rb
+
       - name: Stage Pages files
         if: steps.store.outputs.exists == 'true'
         run: rsync -a --exclude .git site/ _site/
@@ -95,13 +105,3 @@ jobs:
       - id: deployment
         if: steps.store.outputs.exists == 'true'
         uses: actions/deploy-pages@v4
-
-      - name: Strip badge block from PR body
-        if: github.event_name == 'pull_request'
-        working-directory: badge
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          TARGET: strip
-        run: ruby lib/body.rb

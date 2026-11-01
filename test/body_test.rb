@@ -52,6 +52,12 @@ class BodyTest < Minitest::Test
     assert_equal [['repos/limadelic/badge/pulls?state=open&head=limadelic%3Aunit&per_page=100']], gh.calls
   end
 
+  def test_numeric_branch_without_pr_is_not_patched
+    gh = FakeGh.new(body: 'Hi')
+    Body.run(env('BRANCH' => '42'), gh)
+    assert_nil gh.patched
+  end
+
   def test_open_pr_of_branch_is_patched
     gh = FakeGh.new(body: 'Hi', pulls: '[{"number":12}]')
     Body.run(env, gh)

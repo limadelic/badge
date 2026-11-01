@@ -30,10 +30,10 @@ module Body
   end
 
   def pr(env, api)
-    prefix = Prefix.compute(env, api)
-    number = prefix.delete_suffix('/')
-    return unless number.match?(/\A\d+\z/)
+    number = Prefix.pr_number(env, api)
+    return unless number
 
+    prefix = "#{number}/"
     path = "repos/#{env.fetch('REPO')}/pulls/#{number}"
     body = api.call(path, '--jq', '.body // ""').chomp
     return if only_missing?(env) && body.match?(BLOCK)
