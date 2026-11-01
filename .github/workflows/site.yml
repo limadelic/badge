@@ -49,7 +49,7 @@ jobs:
 
       - name: Copy badges from this run
         run: |
-          test -s "$RUNNER_TEMP/badges/badge.json" || { echo "no badge.json from this run"; exit 1; }
+          test -n "$(find "$RUNNER_TEMP/badges" -mindepth 3 -maxdepth 3 -name badge.json)" || { echo "no badge.json from this run"; exit 1; }
           cp -R "$RUNNER_TEMP/badges/." site/
 
       - name: Commit and push badges
