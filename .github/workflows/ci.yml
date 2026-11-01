@@ -171,3 +171,22 @@ jobs:
         with:
           badges: cukes=cucumber.json
           run-id: ${{ github.run_id }}
+
+      - name: Assert body
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            number=$PR
+          else
+            number=$(gh api "repos/$REPO/pulls?state=open&head=${REPO%%/*}:$BRANCH" --jq '.[0].number // empty')
+          fi
+          [ -n "$number" ] || exit 0
+          body=$(gh api "repos/$REPO/pulls/$number" --jq '.body // ""')
+          grep -qF "[![cukes](https://img.shields.io/endpoint?" <<<"$body"
+          grep -qF "cacheSeconds=60&v=$RUN_ID)" <<<"$body"
