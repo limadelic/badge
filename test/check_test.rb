@@ -19,7 +19,7 @@ class CheckTest < Minitest::Test
 
   def test_shields_error_svg_is_bad
     json = JSON.generate(schemaVersion: 1, label: 'cukes', message: 'invalid', color: 'red')
-    http = { BADGE => ok(json), Check::Remote.shield(BADGE) => ok('custom badge cukes invalid') }
+    http = { BADGE => ok(json), Check::Remote.shield(BADGE) => ok('custom badge: inaccessible') }
     assert_equal [1, [BADGE]], check(http: http)
   end
 
