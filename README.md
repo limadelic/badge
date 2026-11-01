@@ -88,10 +88,9 @@ The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` wr
 
 `badge.yml`:
 
-| Input    | Default  | Does                                      |
-| -------- | -------- | ----------------------------------------- |
-| `labels` | required | one `label=linkfile` per line             |
-| `branch` | `badges` | store branch for the badge json and files |
+| Input    | Default  | Does                          |
+| -------- | -------- | ----------------------------- |
+| `labels` | required | one `label=linkfile` per line |
 
 ## What runs
 
@@ -101,7 +100,7 @@ On push and pull request (opened, synchronize):
 2. `site`: restores the last Pages deploy from its artifact, merges every `badge-*` artifact into it, uploads it (kept 90 days) and deploys Pages. Pages runs one deploy at a time.
 3. `body_after_site`: rewrites the PR body block, now with a cache-busted link.
 4. `readme`: on push to `main` only, writes the main badge block into `README.md` and pushes it.
-5. `check`: runs only when `site` succeeds. Retries up to 10 times, 15 seconds apart. Fails if a badge json or svg is missing or wrong, if a PR body with a badge block or the README has no badge image, or if the store holds a stale dir.
+5. `check`: runs only when `site` succeeds. Restores the last Pages deploy and reads its prefix dirs from `_site`. Retries up to 10 times, 15 seconds apart. Fails if the store is empty, if a push to `main` finds no `main/` prefix, if a badge json or svg is missing or wrong, if a PR body with a badge block or the README has no badge image, or if the store holds a stale dir.
 
 On closed pull request (same repo) and branch delete: `prune` restores the last Pages deploy, drops the prefix from it, redeploys Pages (kept 90 days), and strips the block from the PR body.
 

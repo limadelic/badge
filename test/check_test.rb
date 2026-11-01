@@ -64,7 +64,7 @@ class CheckTest < Minitest::Test
   end
 
   def test_stale_dir_is_bad
-    assert_equal [1, ['stale badges dir: old/']], check(api: stale_api)
+    assert_equal [1, ['stale badges dir: old/']], check(api: stale_api, dirs: %w[main 7 unit old])
   end
 
   def test_pr_block_without_badge_is_bad
@@ -118,11 +118,11 @@ class CheckTest < Minitest::Test
 
   def test_pr_body_camo_not_found_label_is_bad
     http = pr_served(CAMO => ok(svg('cukes: not found')))
-    assert_equal [1, ["#{CAMO}: aria-label \"cukes: not found\""]], check(env: pr_env, api: pr_api, http: http)
+    assert_equal [1, ["#{CAMO}: aria-label \"cukes: not found\""]], pr_check(http: http)
   end
 
   def test_pr_badge_on_pull_request_is_good
-    assert_equal [0, []], check(env: pr_env, api: pr_api, http: pr_served)
+    assert_equal [0, []], pr_check(http: pr_served)
   end
 
   def test_gh_failure_is_bad_not_a_crash

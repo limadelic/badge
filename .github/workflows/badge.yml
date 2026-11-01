@@ -7,10 +7,6 @@ on:
         description: one line per badge, label=linkfile
         type: string
         required: true
-      branch:
-        description: store branch for the badge json and files
-        type: string
-        default: badges
 
 jobs:
   body:
@@ -127,6 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
@@ -134,6 +131,8 @@ jobs:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
           path: badge
+
+      - uses: ./badge/restore
 
       - name: Check badges
         env:
@@ -143,7 +142,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           LABELS: ${{ inputs.labels }}
-          STORE: ${{ inputs.branch }}
         run: ruby badge/lib/check.rb
 
   prune:

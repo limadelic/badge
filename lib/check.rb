@@ -115,8 +115,8 @@ class Check
   HTML = 'Accept: application/vnd.github.html+json'.freeze
   CAMO_SRC = %r{src="(https://camo\.githubusercontent\.com/[^"]+)"}
 
-  def self.run(env, api = Remote.method(:gh), http = Remote.method(:get))
-    bad = new(env, api, http).failures
+  def self.run(env, api = Remote.method(:gh), http = Remote.method(:get), site = '_site')
+    bad = new(env, api, http, site).failures
     bad.each { |item| puts item }
     bad.empty? ? 0 : 1
   rescue Error, Prefix::Error, JSON::ParserError, KeyError => e
@@ -124,10 +124,11 @@ class Check
     1
   end
 
-  def initialize(env, api, http)
+  def initialize(env, api, http, site)
     @env = env
     @api = api
     @probe = Probe.new(http)
+    @site = site
   end
 
   def failures
@@ -138,8 +139,15 @@ class Check
   end
 
   def store_dirs
-    tree = JSON.parse(@api.call("repos/#{repo}/git/trees/#{store}")).fetch('tree')
-    tree.select { |entry| entry['type'] == 'tree' }.map { |entry| entry['path'] }
+    dirs = Dir.children(@site).sort.select { |name| File.directory?(File.join(@site, name)) }
+    raise Error, 'store is empty' if dirs.empty?
+    raise Error, 'store has no main prefix' if main_run? && !dirs.include?('main')
+
+    dirs
+  end
+
+  def main_run?
+    @env.fetch('BRANCH') == 'main' && !Prefix.pull_request?(@env)
   end
 
   def open_numbers
@@ -215,10 +223,6 @@ class Check
 
   def repo
     @env.fetch('REPO')
-  end
-
-  def store
-    @env.fetch('STORE', 'badges')
   end
 
   def tries
