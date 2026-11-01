@@ -2,6 +2,20 @@
 
 A reusable CI badge unit. A project makes one badge per label in its test job, then calls one reusable workflow, `badge.yml`, once.
 
+## Setup
+
+1. Settings → Pages → Source: GitHub Actions.
+2. Settings → Environments → `github-pages` → Deployment branches and tags: add `main`, `*`, `*/merge` and `refs/pull/*/merge`, so PR merge refs can deploy. With gh, one command per name:
+
+```sh
+gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='main' -f type=branch
+gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='*' -f type=branch
+gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='*/merge' -f type=branch
+gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='refs/pull/*/merge' -f type=branch
+```
+
+3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.1`, `secrets: inherit`, and `contents`, `pages`, `id-token` and `pull-requests` write permissions.
+
 ## Use
 
 ```yaml
@@ -57,7 +71,7 @@ jobs:
       pages: write
       id-token: write
       pull-requests: write
-    uses: limadelic/badge/.github/workflows/badge.yml@v1
+    uses: limadelic/badge/.github/workflows/badge.yml@v1.1
     with:
       labels: cukes=cucumber.json
     secrets: inherit
