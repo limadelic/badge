@@ -83,9 +83,14 @@ class MakeTest < Minitest::Test
     end
   end
 
-  def test_directory_in_files_fails
+  def test_directory_in_files_copies_tree
     Dir.mktmpdir do |dir|
-      assert_raises(Make::Error) { Make.run(env('FILES' => dir), site: File.join(dir, 'site')) }
+      cover = File.join(dir, 'cover')
+      Dir.mkdir(cover)
+      File.write(File.join(cover, 'index.html'), '<html></html>')
+      site = File.join(dir, 'site')
+      Make.run(env('FILES' => cover, 'EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7'), site: site)
+      assert_equal '<html></html>', File.read(File.join(site, '7', 'cukes', 'cover', 'index.html'))
     end
   end
 

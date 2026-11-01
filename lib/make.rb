@@ -1,6 +1,7 @@
 require 'json'
 require 'fileutils'
 require_relative 'prefix'
+require_relative 'tree'
 
 module Make
   class Error < StandardError; end
@@ -13,13 +14,12 @@ module Make
     dir = File.join(site, path)
     FileUtils.mkdir_p(dir)
     File.write(File.join(dir, 'badge.json'), JSON.generate(endpoint(env)))
-    files(env).each { |file| FileUtils.cp(file, dir) }
+    files(env).each { |file| Tree.copy(file, dir) }
     { 'dir' => dir, 'path' => path, 'link' => "#{path}#{link(env)}" }
   end
 
   def check(env)
     check_label(env.fetch('LABEL'))
-    check_files(files(env))
     check_link(env)
   end
 
@@ -29,14 +29,8 @@ module Make
     raise Error, "LABEL must be a bare name: #{label.inspect}"
   end
 
-  def check_files(paths)
-    paths.each do |file|
-      raise Error, "files must not be a directory: #{file}" if File.directory?(file)
-    end
-  end
-
   def check_link(env)
-    names = ['badge.json', *files(env).map { |file| File.basename(file) }]
+    names = ['badge.json', *plain_files(env).map { |file| File.basename(file) }]
     return if names.include?(link(env))
 
     raise Error, "LINK must be a bare file name in the label dir: #{link(env)}"
@@ -52,12 +46,16 @@ module Make
     given = env.fetch('LINK', '')
     return given unless given.empty?
 
-    first = files(env).first
+    first = plain_files(env).first
     first ? File.basename(first) : 'badge.json'
   end
 
   def files(env)
     env.fetch('FILES', '').split
+  end
+
+  def plain_files(env)
+    files(env).select { |file| File.file?(file) }
   end
 end
 

@@ -80,6 +80,8 @@ jobs:
 
 One `make` step per badge goes in the test job. `labels` has one line per badge, `label=linkfile`; the linkfile is what the badge links to and defaults to `badge.json`.
 
+`make`'s `files` takes files and dirs, space separated. A dir is copied recursively under its own name, so `files: cover` puts `cover/index.html` at `<prefix><label>/cover/index.html`. `link` names a top-level file and defaults to the first file, else `badge.json`.
+
 `if: !cancelled()` keeps the badges running after a red test run, so the badge shows red. Closed pull requests and deleted branches skip the test job, and the call still runs to prune.
 
 The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` write, and `actions` read.

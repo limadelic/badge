@@ -16,7 +16,7 @@ inputs:
     required: false
     default: ''
   files:
-    description: paths to copy into the label dir, space separated
+    description: paths to copy into the label dir, space separated; a dir is copied recursively under its own name
     required: false
     default: ''
   link:

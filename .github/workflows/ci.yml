@@ -138,7 +138,7 @@ jobs:
           message: ${{ steps.cukes.outputs.message }}
           color: ${{ steps.cukes.outputs.color }}
           logo: cucumber
-          files: test/fixtures/cucumber.json
+          files: test/fixtures/cucumber.json test/fixtures/cover
 
       - name: Assert json file
         env:
@@ -149,6 +149,7 @@ jobs:
           expected='{"schemaVersion":1,"label":"cukes","message":"3/3","color":"brightgreen","namedLogo":"cucumber"}'
           [ "$(cat "$DIR/badge.json")" = "$expected" ]
           [ -f "$DIR/cucumber.json" ]
+          [ -f "$DIR/cover/index.html" ] && [ -f "$DIR/cover/module.html" ]
           [ "$DIR" = "badge-cukes/site/$PATH_OUT" ]
           [ "${PATH_OUT%cukes/}" != "$PATH_OUT" ]
           [ "$LINK" = "${PATH_OUT}cucumber.json" ]
