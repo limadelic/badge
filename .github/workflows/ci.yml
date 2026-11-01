@@ -55,3 +55,42 @@ jobs:
             echo "prefix [$PREFIX] expected [$expected]"
             exit 1
           fi
+
+  badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: cukes
+        uses: ./cukes
+        with:
+          json: test/fixtures/cucumber.json
+
+      - name: Assert cukes
+        env:
+          MESSAGE: ${{ steps.cukes.outputs.message }}
+          COLOR: ${{ steps.cukes.outputs.color }}
+        run: |
+          [ "$MESSAGE" = "3/3" ] && [ "$COLOR" = brightgreen ]
+
+      - uses: ./make
+        with:
+          label: cukes
+          message: ${{ steps.cukes.outputs.message }}
+          color: ${{ steps.cukes.outputs.color }}
+          logo: cucumber
+          files: test/fixtures/cucumber.json
+
+      - name: Assert json file
+        run: |
+          expected='{"schemaVersion":1,"label":"cukes","message":"3/3","color":"brightgreen","namedLogo":"cucumber"}'
+          [ "$(cat site/cukes.json)" = "$expected" ]
+          [ -f site/cucumber.json ]
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: badge-cukes
+          path: downloaded
+
+      - name: Assert artifact
+        run: diff -r site downloaded

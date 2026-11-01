@@ -1,0 +1,44 @@
+name: Make
+description: Write the badge json and files under the prefix, upload badge-<label>
+
+inputs:
+  label:
+    description: badge label, names the json and the artifact
+    required: true
+  message:
+    description: badge message
+    required: true
+  color:
+    description: badge color
+    required: true
+  logo:
+    description: shields named logo
+    required: false
+    default: ''
+  files:
+    description: paths to copy next to the json, space separated
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        GH_TOKEN: ${{ github.token }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+        EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        LABEL: ${{ inputs.label }}
+        MESSAGE: ${{ inputs.message }}
+        COLOR: ${{ inputs.color }}
+        LOGO: ${{ inputs.logo }}
+        FILES: ${{ inputs.files }}
+      run: ruby "$ACTION_PATH/../lib/make.rb"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: badge-${{ inputs.label }}
+        path: site/
