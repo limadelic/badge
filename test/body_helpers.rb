@@ -31,7 +31,7 @@ MAIN_BLOCK = [
   '<!-- badges-start -->',
   '',
   '[![cukes](https://img.shields.io/endpoint?url=https%3A%2F%2Flimadelic.github.io%2Fbadge%2Fmain%2Fcukes%2F' \
-  'badge.json&cacheSeconds=60)](https://limadelic.github.io/badge/main/cukes/cucumber.json)',
+  'badge.json&cacheSeconds=60&v=42)](https://limadelic.github.io/badge/main/cukes/cucumber.json)',
   '',
   '<!-- badges-end -->'
 ].join("\n")

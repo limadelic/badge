@@ -66,7 +66,7 @@ class BodyTest < Minitest::Test
   end
 
   def test_badge_without_link_links_badge_json
-    markup = Body.block(env('BADGES' => 'cukes'), 'main/', false)
+    markup = Body.block(env('BADGES' => 'cukes'), 'main/')
     assert_includes markup, '(https://limadelic.github.io/badge/main/cukes/badge.json)'
   end
 

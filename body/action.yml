@@ -10,7 +10,7 @@ inputs:
     required: false
     default: pr
   run-id:
-    description: run id in the badge url, busts the camo cache, pr only
+    description: run id in the badge url, busts the camo cache
     required: false
     default: ''
   only-missing:

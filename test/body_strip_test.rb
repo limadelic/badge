@@ -36,7 +36,7 @@ class BodyStripTest < Minitest::Test
   end
 
   def test_round_trip_between_text
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     assert_equal "Top\n\nBottom\n", Body.strip(Spacing.join('Top', markup, 'Bottom'))
   end
 

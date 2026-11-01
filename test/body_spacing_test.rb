@@ -24,13 +24,13 @@ class BodySpacingTest < Minitest::Test
   end
 
   def test_place_treats_whitespace_only_head_line_as_blank
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     text = "# badge\n   \n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n"
     assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
   end
 
   def test_place_treats_whitespace_only_tail_line_as_blank
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     text = "# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\n   \nSome text\n"
     assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
   end

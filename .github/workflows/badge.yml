@@ -141,6 +141,7 @@ jobs:
       - uses: ./badge/body
         with:
           badges: ${{ inputs.labels }}
+          run-id: ${{ github.run_id }}
           target: readme
 
   check:

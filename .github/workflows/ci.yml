@@ -37,7 +37,7 @@ jobs:
           cp README.md "$RUNNER_TEMP/readme/copy/README.md"
           cp test/fixtures/readme.md "$RUNNER_TEMP/readme/fixture/README.md"
           for dir in copy fixture; do
-            (cd "$RUNNER_TEMP/readme/$dir" && TARGET=readme BRANCH=main BADGES='cukes=cucumber.json' REPO="$GITHUB_REPOSITORY" ruby "$GITHUB_WORKSPACE/lib/body.rb")
+            (cd "$RUNNER_TEMP/readme/$dir" && TARGET=readme BRANCH=main BADGES='cukes=cucumber.json' REPO="$GITHUB_REPOSITORY" RUN_ID="$GITHUB_RUN_ID" ruby "$GITHUB_WORKSPACE/lib/body.rb")
           done
 
       - name: Check readme with prettier

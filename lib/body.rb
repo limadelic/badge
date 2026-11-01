@@ -41,7 +41,7 @@ module Body
     body = api.call(path, '--jq', '.body // ""').chomp
     return if only_missing?(env) && body.match?(BLOCK)
 
-    markup = block(env, prefix, true)
+    markup = block(env, prefix)
     updated = place(body, markup) || Spacing.join(markup, strip(body))
     patch(api, path, updated) unless updated == body
   end
@@ -50,21 +50,20 @@ module Body
     return unless env.fetch('BRANCH') == 'main'
 
     text = File.read(path)
-    markup = block(env, 'main/', false)
+    markup = block(env, 'main/')
     updated = place(text, markup) || insert(strip(text), markup)
     File.write(path, updated)
   end
 
-  def block(env, prefix, cache)
+  def block(env, prefix)
     lines = badges(env).map do |label, link|
-      "[![#{label}](#{shield(env, prefix, label, cache)})](#{url(env, prefix, label, link)})"
+      "[![#{label}](#{shield(env, prefix, label)})](#{url(env, prefix, label, link)})"
     end
     "#{START}\n\n#{lines.join("\n")}\n\n#{STOP}\n"
   end
 
-  def shield(env, prefix, label, cache)
-    params = { 'url' => url(env, prefix, label, 'badge.json'), 'cacheSeconds' => 60 }
-    params['v'] = env.fetch('RUN_ID') if cache
+  def shield(env, prefix, label)
+    params = { 'url' => url(env, prefix, label, 'badge.json'), 'cacheSeconds' => 60, 'v' => env.fetch('RUN_ID') }
     "https://img.shields.io/endpoint?#{URI.encode_www_form(params)}"
   end
 

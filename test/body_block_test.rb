@@ -38,12 +38,12 @@ class BodyBlockTest < Minitest::Test
   end
 
   def test_label_and_link_are_percent_encoded
-    markup = Body.block(env('BADGES' => 'cuke s=my file.json'), 'main/', false)
+    markup = Body.block(env('BADGES' => 'cuke s=my file.json'), 'main/')
     assert_includes markup, '(https://limadelic.github.io/badge/main/cuke%20s/my%20file.json)'
   end
 
   def test_block_has_blank_line_after_start_and_before_end
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     assert markup.start_with?("#{Body::START}\n\n[![cukes]")
     assert_includes markup, "\n\n#{Body::STOP}\n"
   end
@@ -56,36 +56,41 @@ class BodyBlockTest < Minitest::Test
   end
 
   def test_place_leaves_one_blank_line_before_text_after_end
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     text = "# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n"
     assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
   end
 
   def test_place_drops_whitespace_only_tail
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     text = "# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\n\n   \n"
     assert_equal "# badge\n\n#{markup}", Body.place(text, markup)
   end
 
   def test_place_at_end_of_file_adds_no_blank_line
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     text = "# badge\n\n#{markup}"
     assert_equal text, Body.place(text, markup)
   end
 
   def test_insert_skips_hash_lines_inside_fence
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     text = "```sh\n# install\n```\n\n# Project\n\nText\n"
     assert_equal "```sh\n# install\n```\n\n# Project\n\n#{markup}\nText\n", Body.insert(text, markup)
   end
 
   def test_insert_leaves_one_blank_line_before_text
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     assert_equal "# badge\n\n#{markup}\nSome text\n", Body.insert("# badge\nSome text\n", markup)
   end
 
+  def test_main_block_busts_camo_cache_with_run_id
+    markup = Body.block(env, 'main/')
+    assert_includes markup, 'badge.json&cacheSeconds=60&v=42)'
+  end
+
   def test_second_run_of_place_and_insert_changes_nothing
-    markup = Body.block(env, 'main/', false)
+    markup = Body.block(env, 'main/')
     placed = Body.place("# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n", markup)
     assert_equal placed, Body.place(placed, markup)
     inserted = Body.insert("# badge\nSome text\n", markup)
