@@ -23,6 +23,7 @@ name: CI
 
 on:
   push:
+    branches: ["**"]
   pull_request:
     types: [opened, reopened, synchronize, closed]
   delete:
