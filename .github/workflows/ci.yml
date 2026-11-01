@@ -25,6 +25,25 @@ jobs:
 
       - run: bundle exec rubocop && ruby -Ilib -e 'Dir["test/*_test.rb"].each { |f| require "./#{f}" }'
 
+  readme:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write readme block to samples
+        run: |
+          mkdir -p "$RUNNER_TEMP/readme/copy" "$RUNNER_TEMP/readme/fixture"
+          cp README.md "$RUNNER_TEMP/readme/copy/README.md"
+          cp test/fixtures/readme.md "$RUNNER_TEMP/readme/fixture/README.md"
+          for dir in copy fixture; do
+            (cd "$RUNNER_TEMP/readme/$dir" && TARGET=readme BRANCH=main BADGES='cukes=cucumber.json' REPO="$GITHUB_REPOSITORY" ruby "$GITHUB_WORKSPACE/lib/body.rb")
+          done
+
+      - name: Check readme with prettier
+        working-directory: ${{ runner.temp }}/readme
+        run: npx --yes prettier@3 --check copy/README.md fixture/README.md
+
   prefix:
     if: github.event_name != 'delete' && github.event.action != 'closed'
     runs-on: ubuntu-latest

@@ -73,9 +73,9 @@ The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` wr
 
 `badge.yml`:
 
-| Input | Default | Does |
-|-------|---------|------|
-| `labels` | required | one `label=linkfile` per line |
+| Input    | Default  | Does                                      |
+| -------- | -------- | ----------------------------------------- |
+| `labels` | required | one `label=linkfile` per line             |
 | `branch` | `badges` | store branch for the badge json and files |
 
 ## What runs
@@ -94,13 +94,13 @@ The unit's own scripts run from a checkout of this repo at the same commit that 
 
 ## Parts
 
-| Part | Kind | Does |
-|------|------|------|
-| `prefix` | composite action | `main/` on main, the PR number on a PR, else the branch |
-| `cukes` | composite action | `n/total` message and color from a cucumber json |
-| `make` | composite action | writes the badge json and files, uploads `badge-<label>` |
-| `body` | composite action | writes the PR body block, or the README block on main |
-| `badge.yml` | reusable workflow | the whole flow above |
+| Part        | Kind              | Does                                                     |
+| ----------- | ----------------- | -------------------------------------------------------- |
+| `prefix`    | composite action  | `main/` on main, the PR number on a PR, else the branch  |
+| `cukes`     | composite action  | `n/total` message and color from a cucumber json         |
+| `make`      | composite action  | writes the badge json and files, uploads `badge-<label>` |
+| `body`      | composite action  | writes the PR body block, or the README block on main    |
+| `badge.yml` | reusable workflow | the whole flow above                                     |
 
 ## Tests
 
