@@ -58,9 +58,46 @@ class MakeTest < Minitest::Test
   end
 
   def test_given_link_wins
+    Dir.mktmpdir do |dir|
+      report = File.join(dir, 'report.html')
+      File.write(report, '<html></html>')
+      extra = { 'FILES' => report, 'LINK' => 'report.html', 'EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7' }
+      out = Make.run(env(extra), site: File.join(dir, 'site'))
+      assert_equal '7/cukes/report.html', out['link']
+    end
+  end
+
+  def test_link_to_missing_file_fails
     Dir.mktmpdir do |site|
-      out = Make.run(env('LINK' => 'index.html', 'EVENT_NAME' => 'pull_request', 'PR_NUMBER' => '7'), site: site)
-      assert_equal '7/cukes/index.html', out['link']
+      assert_raises(Make::Error) { Make.run(env('LINK' => 'index.html'), site: site) }
+    end
+  end
+
+  def test_link_with_slash_fails
+    Dir.mktmpdir do |dir|
+      report = File.join(dir, 'report.html')
+      File.write(report, '<html></html>')
+      assert_raises(Make::Error) do
+        Make.run(env('FILES' => report, 'LINK' => 'sub/report.html'), site: File.join(dir, 'site'))
+      end
+    end
+  end
+
+  def test_directory_in_files_fails
+    Dir.mktmpdir do |dir|
+      assert_raises(Make::Error) { Make.run(env('FILES' => dir), site: File.join(dir, 'site')) }
+    end
+  end
+
+  def test_empty_label_fails
+    Dir.mktmpdir do |site|
+      assert_raises(Make::Error) { Make.run(env('LABEL' => ''), site: site) }
+    end
+  end
+
+  def test_label_with_slash_fails
+    Dir.mktmpdir do |site|
+      assert_raises(Make::Error) { Make.run(env('LABEL' => 'a/b'), site: site) }
     end
   end
 
