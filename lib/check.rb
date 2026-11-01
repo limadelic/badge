@@ -33,6 +33,7 @@ class Check
 
   class Probe
     SVG = 'image/svg+xml'.freeze
+    ERROR = 'custom badge'.freeze
 
     def initialize(http)
       @http = http
@@ -43,7 +44,7 @@ class Check
       return false unless json
 
       res = @http.call(Remote.shield(url))
-      ok?(res) && res.body.to_s.include?(label) && res.body.to_s.include?(json['message'])
+      ok?(res) && shown?(res.body.to_s, label, json['message'])
     end
 
     def camo?(url)
@@ -66,6 +67,10 @@ class Check
     def valid?(json, label)
       json.is_a?(Hash) && json['schemaVersion'] == 1 && json['label'] == label &&
         json['message'].is_a?(String) && !json['message'].empty? && json['color'].is_a?(String)
+    end
+
+    def shown?(body, label, message)
+      body.include?(label) && body.include?(message) && !body.include?(ERROR)
     end
 
     def ok?(res)
