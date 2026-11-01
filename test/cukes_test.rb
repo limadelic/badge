@@ -30,6 +30,22 @@ class CukesTest < Minitest::Test
     end
   end
 
+  def test_failed_before_hook_is_red
+    Dir.mktmpdir do |dir|
+      hooked = scenario('passed').merge('before' => [{ 'result' => { 'status' => 'failed' } }])
+      path = write_json(dir, feature(hooked))
+      assert_equal({ 'message' => '0/1', 'color' => 'red' }, Cukes.summary(path))
+    end
+  end
+
+  def test_failed_after_hook_is_red
+    Dir.mktmpdir do |dir|
+      hooked = scenario('passed').merge('after' => [{ 'result' => { 'status' => 'failed' } }])
+      path = write_json(dir, feature(hooked))
+      assert_equal({ 'message' => '0/1', 'color' => 'red' }, Cukes.summary(path))
+    end
+  end
+
   def test_no_scenarios_is_red
     Dir.mktmpdir do |dir|
       path = write_json(dir, feature)

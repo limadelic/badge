@@ -28,7 +28,7 @@ module Cukes
   end
 
   def ok?(scenario)
-    scenario.fetch('steps', []).all? { |s| s.dig('result', 'status') == 'passed' }
+    %w[before steps after].flat_map { |key| scenario.fetch(key, []) }.all? { |s| s.dig('result', 'status') == 'passed' }
   end
 
   def color(pass)

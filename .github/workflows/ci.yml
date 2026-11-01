@@ -79,7 +79,20 @@ jobs:
         run: |
           [ "$MESSAGE" = "3/3" ] && [ "$COLOR" = brightgreen ]
 
-      - uses: ./make
+      - id: red
+        uses: ./cukes
+        with:
+          json: test/fixtures/cucumber_red.json
+
+      - name: Assert red cukes
+        env:
+          MESSAGE: ${{ steps.red.outputs.message }}
+          COLOR: ${{ steps.red.outputs.color }}
+        run: |
+          [ "$MESSAGE" = "2/3" ] && [ "$COLOR" = red ]
+
+      - id: make
+        uses: ./make
         with:
           label: cukes
           message: ${{ steps.cukes.outputs.message }}
@@ -88,10 +101,12 @@ jobs:
           files: test/fixtures/cucumber.json
 
       - name: Assert json file
+        env:
+          DIR: ${{ steps.make.outputs.dir }}
         run: |
           expected='{"schemaVersion":1,"label":"cukes","message":"3/3","color":"brightgreen","namedLogo":"cucumber"}'
-          [ "$(cat site/cukes.json)" = "$expected" ]
-          [ -f site/cucumber.json ]
+          [ "$(cat "$DIR/cukes.json")" = "$expected" ]
+          [ -f "$DIR/cucumber.json" ]
 
       - uses: actions/download-artifact@v4
         with:
@@ -99,4 +114,4 @@ jobs:
           path: downloaded
 
       - name: Assert artifact
-        run: diff -r site downloaded
+        run: diff -r badge-cukes/site downloaded

@@ -1,5 +1,5 @@
 name: Make
-description: Write the badge json and files under the prefix, upload badge-<label>
+description: Write the badge json and files under the prefix in badge-<label>/site, upload that
 
 inputs:
   label:
@@ -20,10 +20,16 @@ inputs:
     required: false
     default: ''
 
+outputs:
+  dir:
+    description: the dir written, badge-<label>/site/<prefix>
+    value: ${{ steps.write.outputs.dir }}
+
 runs:
   using: composite
   steps:
-    - shell: bash
+    - id: write
+      shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
         GH_TOKEN: ${{ github.token }}
@@ -36,9 +42,9 @@ runs:
         COLOR: ${{ inputs.color }}
         LOGO: ${{ inputs.logo }}
         FILES: ${{ inputs.files }}
-      run: ruby "$ACTION_PATH/../lib/make.rb"
+      run: ruby "$ACTION_PATH/../lib/make.rb" >> "$GITHUB_OUTPUT"
 
     - uses: actions/upload-artifact@v4
       with:
         name: badge-${{ inputs.label }}
-        path: site/
+        path: badge-${{ inputs.label }}/site
