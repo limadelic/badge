@@ -20,7 +20,7 @@ inputs:
     required: false
     default: ''
   link:
-    description: file name in the label dir the badge links to, default first of files else badge.json
+    description: what the badge links to; a file in the label dir (top level or a path into a copied dir, e.g. cover/index.html), or a full http(s) URL kept as given; default first plain file of files else badge.json
     required: false
     default: ''
 
@@ -32,7 +32,7 @@ outputs:
     description: the label dir relative to the Pages root, <prefix><label>/
     value: ${{ steps.write.outputs.path }}
   link:
-    description: the link file relative to the Pages root, <prefix><label>/<link>
+    description: the link relative to the Pages root, <prefix><label>/<link>, or the URL as given
     value: ${{ steps.write.outputs.link }}
 
 runs:

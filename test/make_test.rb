@@ -73,7 +73,7 @@ class MakeTest < Minitest::Test
     end
   end
 
-  def test_link_with_slash_fails
+  def test_link_to_missing_path_fails
     Dir.mktmpdir do |dir|
       report = File.join(dir, 'report.html')
       File.write(report, '<html></html>')

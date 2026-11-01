@@ -9,18 +9,14 @@ module Make
   module_function
 
   def run(env, site: "badge-#{env.fetch('LABEL')}/site")
-    check(env)
+    check_label(env.fetch('LABEL'))
     path = "#{Prefix.compute(env)}#{env.fetch('LABEL')}/"
     dir = File.join(site, path)
     FileUtils.mkdir_p(dir)
     File.write(File.join(dir, 'badge.json'), JSON.generate(endpoint(env)))
     files(env).each { |file| Tree.copy(file, dir) }
-    { 'dir' => dir, 'path' => path, 'link' => "#{path}#{link(env)}" }
-  end
-
-  def check(env)
-    check_label(env.fetch('LABEL'))
-    check_link(env)
+    check_link(env, dir)
+    { 'dir' => dir, 'path' => path, 'link' => href(env, path) }
   end
 
   def check_label(label)
@@ -29,11 +25,25 @@ module Make
     raise Error, "LABEL must be a bare name: #{label.inspect}"
   end
 
-  def check_link(env)
-    names = ['badge.json', *plain_files(env).map { |file| File.basename(file) }]
-    return if names.include?(link(env))
+  def check_link(env, dir)
+    name = link(env)
+    return if url?(name)
+    return if inside?(dir, name) && File.file?(File.join(dir, name))
 
-    raise Error, "LINK must be a bare file name in the label dir: #{link(env)}"
+    raise Error, "LINK must be a file in the label dir: #{name}"
+  end
+
+  def inside?(dir, name)
+    File.expand_path(name, dir).start_with?("#{File.expand_path(dir)}/")
+  end
+
+  def url?(name)
+    name.match?(%r{\Ahttps?://})
+  end
+
+  def href(env, path)
+    name = link(env)
+    url?(name) ? name : "#{path}#{name}"
   end
 
   def endpoint(env)
