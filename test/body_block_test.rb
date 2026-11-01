@@ -10,7 +10,31 @@ class BodyBlockTest < Minitest::Test
            "Middle\n<!-- badges-start -->\nold2\n<!-- badges-end -->\nBottom"
     gh = FakeGh.new(body: body)
     Body.run(pr_event, gh)
-    assert_equal "Top\n\n#{BLOCK_7}\n\nMiddle\nBottom", gh.patched
+    assert_equal "Top\n\n#{BLOCK_7}\n\nMiddle\n\nBottom\n", gh.patched
+  end
+
+  def test_pr_whitespace_only_body_gets_markup_only
+    gh = FakeGh.new(body: '   ')
+    Body.run(pr_event, gh)
+    assert_equal "#{BLOCK_7}\n", gh.patched
+  end
+
+  def test_pr_body_keeps_one_blank_line_before_text
+    gh = FakeGh.new(body: "\n\nSome text\n")
+    Body.run(pr_event, gh)
+    assert_equal "#{BLOCK_7}\n\nSome text\n", gh.patched
+  end
+
+  def test_place_treats_whitespace_only_head_line_as_blank
+    markup = Body.block(env, 'main/', false)
+    text = "# badge\n   \n<!-- badges-start -->\nold\n<!-- badges-end -->\nSome text\n"
+    assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
+  end
+
+  def test_place_treats_whitespace_only_tail_line_as_blank
+    markup = Body.block(env, 'main/', false)
+    text = "# badge\n\n<!-- badges-start -->\nold\n<!-- badges-end -->\n   \nSome text\n"
+    assert_equal "# badge\n\n#{markup}\nSome text\n", Body.place(text, markup)
   end
 
   def test_orphan_markers_are_removed
@@ -28,7 +52,7 @@ class BodyBlockTest < Minitest::Test
   def test_crlf_block_is_replaced
     gh = FakeGh.new(body: "Top\r\n<!-- badges-start -->\r\nold\r\n<!-- badges-end -->\r\nBottom")
     Body.run(pr_event, gh)
-    assert_equal "Top\n\n#{BLOCK_7}\n\nBottom", gh.patched
+    assert_equal "Top\n\n#{BLOCK_7}\n\nBottom\n", gh.patched
   end
 
   def test_only_missing_skips_crlf_block
@@ -52,7 +76,7 @@ class BodyBlockTest < Minitest::Test
     old = BLOCK_7.gsub("\n\n", "\n")
     gh = FakeGh.new(body: "Top\n#{old}\nBottom")
     Body.run(pr_event, gh)
-    assert_equal "Top\n\n#{BLOCK_7}\n\nBottom", gh.patched
+    assert_equal "Top\n\n#{BLOCK_7}\n\nBottom\n", gh.patched
   end
 
   def test_place_leaves_one_blank_line_before_text_after_end

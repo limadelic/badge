@@ -41,7 +41,7 @@ module Body
     return if only_missing?(env) && body.match?(BLOCK)
 
     markup = block(env, prefix, true)
-    updated = place(body, markup) || [markup, strip(body)].reject(&:empty?).join("\n")
+    updated = place(body, markup) || Spacing.join(markup, strip(body))
     patch(api, path, updated) unless updated == body
   end
 

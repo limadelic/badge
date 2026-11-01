@@ -22,7 +22,7 @@ class BodyTest < Minitest::Test
   def test_prepends_block_to_body_without_one
     gh = FakeGh.new(body: 'Fixes things')
     Body.run(pr_event, gh)
-    assert_equal "#{BLOCK_7}\n\nFixes things", gh.patched
+    assert_equal "#{BLOCK_7}\n\nFixes things\n", gh.patched
   end
 
   def test_patch_goes_to_pr_body_endpoint
@@ -35,7 +35,7 @@ class BodyTest < Minitest::Test
     gh = FakeGh.new(body: "Top\n<!-- badges-start -->\nold\n<!-- badges-end -->\nBottom")
     Body.run(pr_event, gh)
     assert gh.patched.start_with?("Top\n\n<!-- badges-start -->\n\n[![cukes]")
-    assert gh.patched.end_with?("<!-- badges-end -->\n\nBottom")
+    assert gh.patched.end_with?("<!-- badges-end -->\n\nBottom\n")
     refute_includes gh.patched, 'old'
   end
 

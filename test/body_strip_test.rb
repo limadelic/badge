@@ -10,17 +10,25 @@ class BodyStripTest < Minitest::Test
   end
 
   def test_strip_text_removes_block
-    assert_equal 'ab', Body.strip("a<!-- badges-start -->\nx\n<!-- badges-end -->\nb")
+    assert_equal "a\n\nb\n", Body.strip("a<!-- badges-start -->\nx\n<!-- badges-end -->\nb")
   end
 
   def test_removes_block_and_keeps_text
     gh = FakeGh.new(body: "Top\n<!-- badges-start -->\nold\n<!-- badges-end -->\nBottom")
     Body.run(strip_event, gh)
-    assert_equal "Top\nBottom", gh.patched
+    assert_equal "Top\n\nBottom\n", gh.patched
   end
 
   def test_strip_keeps_one_blank_line_around_text
-    assert_equal "Top\n\nBottom", Body.strip("Top\n\n#{BLOCK_7}\n\nBottom")
+    assert_equal "Top\n\nBottom\n", Body.strip("Top\n\n#{BLOCK_7}\n\nBottom")
+  end
+
+  def test_strip_never_keeps_more_than_one_blank_line
+    assert_equal "Top\n\nBottom\n", Body.strip("Top\n\n\n#{BLOCK_7}\n\n\nBottom\n")
+  end
+
+  def test_strip_crlf_gives_lf_only
+    assert_equal "Top\n\nBottom\n", Body.strip("Top\r\n\r\n#{BLOCK_7.gsub("\n", "\r\n")}\r\n\r\nBottom\r\n")
   end
 
   def test_strip_at_end_of_file_keeps_one_newline
@@ -29,7 +37,7 @@ class BodyStripTest < Minitest::Test
 
   def test_round_trip_between_text
     markup = Body.block(env, 'main/', false)
-    assert_equal "Top\n\nBottom", Body.strip(Spacing.join('Top', markup, 'Bottom'))
+    assert_equal "Top\n\nBottom\n", Body.strip(Spacing.join('Top', markup, 'Bottom'))
   end
 
   def test_removes_every_block
@@ -37,7 +45,7 @@ class BodyStripTest < Minitest::Test
            "Middle\n<!-- badges-start -->\nold2\n<!-- badges-end -->\nBottom"
     gh = FakeGh.new(body: body)
     Body.run(strip_event, gh)
-    assert_equal "Top\nMiddle\nBottom", gh.patched
+    assert_equal "Top\n\nMiddle\n\nBottom\n", gh.patched
   end
 
   def test_removes_orphan_markers
