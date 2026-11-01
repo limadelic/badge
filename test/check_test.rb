@@ -59,9 +59,14 @@ class CheckTest < Minitest::Test
     assert_equal [1, ['stale badges dir: old/']], check(api: stale_api)
   end
 
-  def test_pr_without_badge_is_bad
-    api = { "repos/#{REPO}/pulls?state=open" => "7\n", "repos/#{REPO}/pulls/7" => '<p>hi</p>' }
+  def test_pr_block_without_badge_is_bad
+    api = { "repos/#{REPO}/pulls?state=open" => "7\n", "repos/#{REPO}/pulls/7" => pull('<p>hi</p>') }
     assert_equal [1, ['PR 7 body has no badge image']], check(api: api)
+  end
+
+  def test_pr_without_block_is_not_checked
+    api = { "repos/#{REPO}/pulls?state=open" => "7\n", "repos/#{REPO}/pulls/7" => pull('<p>hi</p>', 'hi') }
+    assert_equal [0, []], check(api: api)
   end
 
   def test_camo_not_svg_is_bad

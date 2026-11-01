@@ -2,6 +2,7 @@ require 'json'
 require 'net/http'
 require 'open3'
 require 'uri'
+require_relative 'body'
 require_relative 'prefix'
 
 class Check
@@ -113,9 +114,9 @@ class Check
   end
 
   def camo_sources(store, pulls)
-    sources = pulls.map do |number|
-      html = @api.call("repos/#{repo}/pulls/#{number}", '-H', HTML, '--jq', '.body_html')
-      ["PR #{number} body", camo(html)]
+    sources = pulls.filter_map do |number|
+      pull = JSON.parse(@api.call("repos/#{repo}/pulls/#{number}", '-H', HTML))
+      ["PR #{number} body", camo(pull['body_html'].to_s)] if pull['body'].to_s.include?(Body::START)
     end
     return sources unless store.include?('main')
 

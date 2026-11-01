@@ -22,6 +22,7 @@ module CheckHelpers
   IMG = %(<img src="#{CAMO}">).freeze
   TREE = '{"tree":[{"path":"main","type":"tree"}]}'.freeze
   JSON_OK = JSON.generate(schemaVersion: 1, label: 'cukes', message: '3/3', color: 'brightgreen')
+  PR_BODY = "<!-- badges-start -->\nold\n<!-- badges-end -->".freeze
   STALE_TREE = '{"tree":[{"path":"main","type":"tree"},{"path":"7","type":"tree"},' \
                '{"path":"unit","type":"tree"},{"path":"old","type":"tree"}]}'.freeze
 
@@ -57,9 +58,13 @@ module CheckHelpers
     run_with(base(env), routes(api), ->(url) { served(http)[url] })
   end
 
+  def pull(html, body = PR_BODY)
+    JSON.generate(body: body, body_html: html)
+  end
+
   def stale_api
     { "repos/#{REPO}/git/trees/badges" => STALE_TREE, "repos/#{REPO}/pulls?state=open" => "7\n",
-      "repos/#{REPO}/branches" => "main\nunit\n", "repos/#{REPO}/pulls/7" => IMG }
+      "repos/#{REPO}/branches" => "main\nunit\n", "repos/#{REPO}/pulls/7" => pull(IMG) }
   end
 
   def pr_env
@@ -69,6 +74,6 @@ module CheckHelpers
   def pr_api
     { "repos/#{REPO}/git/trees/badges" => '{"tree":[{"path":"7","type":"tree"}]}',
       "repos/#{REPO}/pulls?state=open" => "7\n", "repos/#{REPO}/branches" => "unit\n",
-      "repos/#{REPO}/pulls/7" => IMG }
+      "repos/#{REPO}/pulls/7" => pull(IMG) }
   end
 end

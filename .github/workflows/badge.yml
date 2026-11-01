@@ -106,7 +106,7 @@ jobs:
 
   body_after_site:
     needs: [site]
-    if: ${{ !cancelled() && github.event_name != 'delete' && github.event.action != 'closed' }}
+    if: ${{ !cancelled() && needs.site.result == 'success' && github.event_name != 'delete' && github.event.action != 'closed' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -124,8 +124,8 @@ jobs:
           run-id: ${{ github.run_id }}
 
   readme:
-    needs: [body_after_site]
-    if: ${{ !cancelled() && github.event_name == 'push' && github.ref_name == 'main' }}
+    needs: [site, body_after_site]
+    if: ${{ !cancelled() && needs.site.result == 'success' && github.event_name == 'push' && github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -144,8 +144,8 @@ jobs:
           target: readme
 
   check:
-    needs: [readme]
-    if: ${{ !cancelled() && github.event_name != 'delete' && github.event.action != 'closed' }}
+    needs: [site, readme]
+    if: ${{ !cancelled() && needs.site.result == 'success' && github.event_name != 'delete' && github.event.action != 'closed' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

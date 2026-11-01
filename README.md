@@ -86,7 +86,7 @@ On push and pull request (opened, synchronize):
 2. `site`: merges every `badge-*` artifact into the store branch, pushes it, deploys Pages. Pages runs one deploy at a time.
 3. `body_after_site`: rewrites the PR body block, now with a cache-busted link.
 4. `readme`: on push to `main` only, writes the main badge block into `README.md` and pushes it.
-5. `check`: retries up to 10 times, 15 seconds apart. Fails if a badge json or svg is missing or wrong, if a PR body or the README has no badge image, or if the store holds a stale dir.
+5. `check`: runs only when `site` succeeds. Retries up to 10 times, 15 seconds apart. Fails if a badge json or svg is missing or wrong, if a PR body with a badge block or the README has no badge image, or if the store holds a stale dir.
 
 On closed pull request (same repo) and branch delete: `prune` drops the prefix from the store branch, redeploys Pages, and strips the block from the PR body.
 
@@ -101,7 +101,6 @@ The unit's own scripts run from a checkout of this repo at the same commit that 
 | `make` | composite action | writes the badge json and files, uploads `badge-<label>` |
 | `body` | composite action | writes the PR body block, or the README block on main |
 | `badge.yml` | reusable workflow | the whole flow above |
-| `check.yml` | reusable workflow | the check alone, `labels` and `branch` inputs |
 
 ## Tests
 
