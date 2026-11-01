@@ -14,7 +14,7 @@ A reusable CI badge unit. A project makes one badge per label in its test job, t
    gh api -X POST repos/OWNER/REPO/environments/github-pages/deployment-branch-policies -f name='refs/pull/*/merge' -f type=branch
    ```
 
-3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.1` and `contents`, `pages`, `id-token` and `pull-requests` write permissions.
+3. Caller job: see Use. It needs `uses: limadelic/badge/.github/workflows/badge.yml@v1.1` and `contents`, `pages`, `id-token` and `pull-requests` write permissions and `actions` read.
 
 ## Use
 
@@ -30,6 +30,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
   pages: write
   id-token: write
   pull-requests: write
@@ -68,6 +69,7 @@ jobs:
     if: ${{ !cancelled() }}
     permissions:
       contents: write
+      actions: read
       pages: write
       id-token: write
       pull-requests: write
@@ -80,7 +82,7 @@ One `make` step per badge goes in the test job. `labels` has one line per badge,
 
 `if: !cancelled()` keeps the badges running after a red test run, so the badge shows red. Closed pull requests and deleted branches skip the test job, and the call still runs to prune.
 
-The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` write.
+The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` write, and `actions` read.
 
 ## Inputs
 
@@ -96,7 +98,7 @@ The caller job must grant `contents`, `pages`, `id-token` and `pull-requests` wr
 On push and pull request (opened, synchronize):
 
 1. `body`: writes the badge block into the open PR body, only when missing.
-2. `site`: merges every `badge-*` artifact into the store branch, pushes it, deploys Pages. Pages runs one deploy at a time.
+2. `site`: restores the last Pages deploy from its artifact, merges every `badge-*` artifact into it, uploads it (kept 90 days) and deploys Pages. Pages runs one deploy at a time.
 3. `body_after_site`: rewrites the PR body block, now with a cache-busted link.
 4. `readme`: on push to `main` only, writes the main badge block into `README.md` and pushes it.
 5. `check`: runs only when `site` succeeds. Retries up to 10 times, 15 seconds apart. Fails if a badge json or svg is missing or wrong, if a PR body with a badge block or the README has no badge image, or if the store holds a stale dir.

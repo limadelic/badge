@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
       pages: write
       id-token: write
     concurrency:
@@ -50,21 +51,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: site
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
 
-      - name: Switch to store branch
-        working-directory: site
+      - name: Find last deploy
+        id: last
         env:
-          BRANCH: ${{ inputs.branch }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
-            git fetch -q origin "$BRANCH"
-            git switch -q -C "$BRANCH" FETCH_HEAD
-          else
-            git switch -q --orphan "$BRANCH"
-            git rm -rq --cached --ignore-unmatch .
-            git clean -fdxq
-          fi
+          ruby badge/lib/store.rb > "$RUNNER_TEMP/last_run_id"
+          echo "run_id=$(cat "$RUNNER_TEMP/last_run_id")" >> "$GITHUB_OUTPUT"
+
+      - name: Start store
+        run: mkdir -p _site
+
+      - name: Restore last deploy
+        if: ${{ steps.last.outputs.run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          run-id: ${{ steps.last.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/restore
+
+      - name: Extract last deploy
+        if: ${{ steps.last.outputs.run_id != '' }}
+        run: tar -xf "$RUNNER_TEMP/restore/artifact.tar" -C _site
 
       - uses: actions/download-artifact@v4
         with:
@@ -75,24 +89,7 @@ jobs:
       - name: Copy badges from this run
         run: |
           test -n "$(find "$RUNNER_TEMP/badges" -mindepth 3 -maxdepth 3 -name badge.json)" || { echo "no badge.json from this run"; exit 1; }
-          cp -R "$RUNNER_TEMP/badges/." site/
-
-      - name: Commit and push badges
-        working-directory: site
-        env:
-          BRANCH: ${{ inputs.branch }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -qm "Update badges from run $RUN_ID"
-            git push -q origin HEAD:"$BRANCH"
-          fi
-
-      - name: Stage Pages files
-        run: rsync -a --exclude .git site/ _site/
+          cp -R "$RUNNER_TEMP/badges/." _site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -100,6 +97,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
+          retention-days: 90
 
       - id: deployment
         uses: actions/deploy-pages@v4
