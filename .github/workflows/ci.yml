@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches-ignore: [badges]
   pull_request:
 
 permissions:
@@ -128,3 +129,12 @@ jobs:
 
       - name: Assert artifact
         run: diff -r badge-cukes/site downloaded
+
+  site:
+    needs: [badge]
+    if: ${{ !cancelled() && needs.badge.result != 'skipped' }}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/site.yml
