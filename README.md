@@ -1,5 +1,11 @@
 # badge
 
+<!-- badges-start -->
+
+[![cukes](https://img.shields.io/endpoint?url=https%3A%2F%2Flimadelic.github.io%2Fbadge%2Fmain%2Fcukes%2Fbadge.json&cacheSeconds=60&v=41943065950)](https://limadelic.github.io/badge/main/cukes/cucumber.json)
+
+<!-- badges-end -->
+
 A reusable CI badge unit. A project makes one badge per label in its test job, then calls one reusable workflow, `badge.yml`, once.
 
 ## Setup
