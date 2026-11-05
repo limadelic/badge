@@ -1,0 +1,34 @@
+name: Prefix
+description: Output the badge path prefix for this run
+
+inputs:
+  branch:
+    description: Branch name, default is the current run
+    required: false
+  event:
+    description: Event name, default is the current run
+    required: false
+  pr:
+    description: PR number, default is the current run
+    required: false
+
+outputs:
+  prefix:
+    description: "main/ for main, <PR number>/ for a PR or open PR, else <branch with / as ->/"
+    value: ${{ steps.prefix.outputs.prefix }}
+
+runs:
+  using: composite
+  steps:
+    - id: prefix
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        BRANCH: ${{ inputs.branch || github.head_ref || github.ref_name }}
+        EVENT_NAME: ${{ inputs.event || github.event_name }}
+        PR_NUMBER: ${{ inputs.pr || github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        prefix=$(ruby "$ACTION_PATH/../lib/prefix.rb")
+        echo "prefix=$prefix" >> "$GITHUB_OUTPUT"

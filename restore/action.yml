@@ -1,0 +1,39 @@
+name: Restore
+description: Restore the last Pages deploy into _site, empty when there is none
+
+outputs:
+  run-id:
+    description: run id of the restored deploy, empty when there is none
+    value: ${{ steps.last.outputs.run_id }}
+
+runs:
+  using: composite
+  steps:
+    - name: Find last deploy
+      id: last
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+      run: |
+        run_id=$(ruby "$ACTION_PATH/../lib/store.rb")
+        echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+    - name: Start store
+      shell: bash
+      run: mkdir -p _site
+
+    - name: Restore last deploy
+      if: ${{ steps.last.outputs.run_id != '' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: github-pages
+        run-id: ${{ steps.last.outputs.run_id }}
+        github-token: ${{ github.token }}
+        path: ${{ runner.temp }}/restore
+
+    - name: Extract last deploy
+      if: ${{ steps.last.outputs.run_id != '' }}
+      shell: bash
+      run: tar -xf "$RUNNER_TEMP/restore/artifact.tar" -C _site

@@ -1,0 +1,177 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+  delete:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  test:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - run: bundle exec rubocop && ruby -Ilib -e 'Dir["test/*_test.rb"].each { |f| require "./#{f}" }'
+
+  readme:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write readme block to samples
+        run: |
+          mkdir -p "$RUNNER_TEMP/readme/copy" "$RUNNER_TEMP/readme/fixture"
+          cp README.md "$RUNNER_TEMP/readme/copy/README.md"
+          cp test/fixtures/readme.md "$RUNNER_TEMP/readme/fixture/README.md"
+          for dir in copy fixture; do
+            (cd "$RUNNER_TEMP/readme/$dir" && TARGET=readme BRANCH=main BADGES='cukes=cucumber.json' REPO="$GITHUB_REPOSITORY" RUN_ID="$GITHUB_RUN_ID" ruby "$GITHUB_WORKSPACE/lib/body.rb")
+          done
+
+      - name: Check readme with prettier
+        working-directory: ${{ runner.temp }}/readme
+        run: |
+          npx --yes prettier@3.9.10 --check copy/README.md fixture/README.md
+          grep -q cacheSeconds=60 copy/README.md fixture/README.md
+
+  prefix:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: main_push
+        uses: ./prefix
+        with:
+          branch: main
+          event: push
+
+      - name: Assert main push
+        env:
+          PREFIX: ${{ steps.main_push.outputs.prefix }}
+        run: '[ "$PREFIX" = "main/" ]'
+
+      - id: pr_seven
+        uses: ./prefix
+        with:
+          branch: main
+          event: pull_request
+          pr: 7
+
+      - name: Assert pull request
+        env:
+          PREFIX: ${{ steps.pr_seven.outputs.prefix }}
+        run: '[ "$PREFIX" = "7/" ]'
+
+      - id: no_pr
+        uses: ./prefix
+        with:
+          branch: no-such/branch
+          event: push
+
+      - name: Assert branch without PR
+        env:
+          PREFIX: ${{ steps.no_pr.outputs.prefix }}
+        run: '[ "$PREFIX" = "no-such-branch/" ]'
+
+      - id: current
+        uses: ./prefix
+
+      - name: Assert current run
+        env:
+          PREFIX: ${{ steps.current.outputs.prefix }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          REF: ${{ github.ref_name }}
+        run: |
+          case "$EVENT" in
+            pull_request*) [ "$PREFIX" = "$PR/" ] ;;
+            push) if [ "$REF" = main ]; then [ "$PREFIX" = main/ ]; else [ "${PREFIX%/}" != "$PREFIX" ]; fi ;;
+          esac
+
+  badge:
+    if: github.event_name != 'delete' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: cukes
+        uses: ./cukes
+        with:
+          json: test/fixtures/cucumber.json
+
+      - name: Assert cukes
+        env:
+          MESSAGE: ${{ steps.cukes.outputs.message }}
+          COLOR: ${{ steps.cukes.outputs.color }}
+        run: |
+          [ "$MESSAGE" = "3/3" ] && [ "$COLOR" = brightgreen ]
+
+      - id: red
+        uses: ./cukes
+        with:
+          json: test/fixtures/cucumber_red.json
+
+      - name: Assert red cukes
+        env:
+          MESSAGE: ${{ steps.red.outputs.message }}
+          COLOR: ${{ steps.red.outputs.color }}
+        run: |
+          [ "$MESSAGE" = "2/3" ] && [ "$COLOR" = red ]
+
+      - id: make
+        uses: ./make
+        with:
+          label: cukes
+          message: ${{ steps.cukes.outputs.message }}
+          color: ${{ steps.cukes.outputs.color }}
+          logo: cucumber
+          files: test/fixtures/cucumber.json test/fixtures/cover
+
+      - name: Assert json file
+        env:
+          DIR: ${{ steps.make.outputs.dir }}
+          PATH_OUT: ${{ steps.make.outputs.path }}
+          LINK: ${{ steps.make.outputs.link }}
+        run: |
+          expected='{"schemaVersion":1,"label":"cukes","message":"3/3","color":"brightgreen","namedLogo":"cucumber"}'
+          [ "$(cat "$DIR/badge.json")" = "$expected" ]
+          [ -f "$DIR/cucumber.json" ]
+          [ -f "$DIR/cover/index.html" ] && [ -f "$DIR/cover/module.html" ]
+          [ "$DIR" = "badge-cukes/site/$PATH_OUT" ]
+          [ "${PATH_OUT%cukes/}" != "$PATH_OUT" ]
+          [ "$LINK" = "${PATH_OUT}cucumber.json" ]
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: badge-cukes
+          path: downloaded
+
+      - name: Assert artifact
+        run: diff -r badge-cukes/site downloaded
+
+  badges:
+    needs: [badge]
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: write
+      actions: read
+      pages: write
+      id-token: write
+      pull-requests: write
+    uses: ./.github/workflows/badge.yml
+    with:
+      labels: cukes=cucumber.json
+    secrets: inherit

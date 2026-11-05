@@ -1,0 +1,42 @@
+name: Body
+description: Write the badge block into the open PR body, or the main block into README.md on main
+
+inputs:
+  badges:
+    description: one line per badge, label=linkfile, linkfile defaults to badge.json
+    required: true
+  target:
+    description: "pr writes the open PR body, readme writes README.md on main and pushes it to main (needs contents: write)"
+    required: false
+    default: pr
+  run-id:
+    description: run id in the badge url, busts the camo cache
+    required: false
+    default: ''
+  only-missing:
+    description: pr only, skip when the block is already in the body
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Write badge block
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        GH_TOKEN: ${{ github.token }}
+        BADGES: ${{ inputs.badges }}
+        TARGET: ${{ inputs.target }}
+        RUN_ID: ${{ inputs.run-id }}
+        ONLY_MISSING: ${{ inputs.only-missing }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+        EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        if [ "$TARGET" = readme ]; then
+          bash "$ACTION_PATH/readme.sh"
+        else
+          ruby "$ACTION_PATH/../lib/body.rb"
+        fi

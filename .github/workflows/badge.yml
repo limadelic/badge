@@ -1,0 +1,203 @@
+name: Badge
+
+on:
+  workflow_call:
+    inputs:
+      labels:
+        description: one line per badge, label=linkfile
+        type: string
+        required: true
+
+jobs:
+  body:
+    if: ${{ github.event_name != 'delete' && github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
+
+      - uses: ./badge/body
+        with:
+          badges: ${{ inputs.labels }}
+          run-id: ${{ github.run_id }}
+          only-missing: "true"
+
+  site:
+    needs: [body]
+    if: ${{ !cancelled() && github.event_name != 'delete' && github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
+
+      - uses: ./badge/restore
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: badge-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/badges
+
+      - name: Copy badges from this run
+        run: |
+          test -n "$(find "$RUNNER_TEMP/badges" -mindepth 3 -maxdepth 3 -name badge.json)" || { echo "no badge.json from this run"; exit 1; }
+          cp -R "$RUNNER_TEMP/badges/." _site/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+          retention-days: 90
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  body_after_site:
+    needs: [site]
+    if: ${{ !cancelled() && needs.site.result == 'success' && github.event_name != 'delete' && github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
+
+      - uses: ./badge/body
+        with:
+          badges: ${{ inputs.labels }}
+          run-id: ${{ github.run_id }}
+
+  readme:
+    needs: [site, body_after_site]
+    if: ${{ !cancelled() && needs.site.result == 'success' && github.event_name == 'push' && github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: badges-readme-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
+
+      - uses: ./badge/body
+        with:
+          badges: ${{ inputs.labels }}
+          run-id: ${{ github.run_id }}
+          target: readme
+
+  check:
+    needs: [site, readme]
+    if: ${{ !cancelled() && needs.site.result == 'success' && needs.readme.result != 'failure' && github.event_name != 'delete' && github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
+
+      - uses: ./badge/restore
+
+      - name: Check badges
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABELS: ${{ inputs.labels }}
+        run: ruby badge/lib/check.rb
+
+  prune:
+    if: ${{ (github.event_name == 'delete' && github.event.ref_type == 'branch') || (github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+      pull-requests: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: badge
+
+      - id: restore
+        uses: ./badge/restore
+
+      - name: Drop closed prefix
+        if: steps.restore.outputs.run-id != ''
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.event.pull_request.head.ref || github.event.ref }}
+        run: ruby badge/lib/prefix.rb drop _site
+
+      - name: Strip badge block from PR body
+        if: github.event_name == 'pull_request'
+        working-directory: badge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TARGET: strip
+        run: ruby lib/body.rb
+
+      - name: Setup Pages
+        if: steps.restore.outputs.run-id != ''
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: steps.restore.outputs.run-id != ''
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+          retention-days: 90
+
+      - id: deployment
+        if: steps.restore.outputs.run-id != ''
+        uses: actions/deploy-pages@v4

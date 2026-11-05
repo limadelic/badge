@@ -1,0 +1,25 @@
+name: Cukes
+description: Scenario count and color from a cucumber json
+
+inputs:
+  json:
+    description: path to a cucumber json report
+    required: true
+
+outputs:
+  message:
+    description: <passed>/<total> scenarios
+    value: ${{ steps.cukes.outputs.message }}
+  color:
+    description: brightgreen when all pass, else red
+    value: ${{ steps.cukes.outputs.color }}
+
+runs:
+  using: composite
+  steps:
+    - id: cukes
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        CUKES_JSON: ${{ inputs.json }}
+      run: ruby "$ACTION_PATH/../lib/cukes.rb" "$CUKES_JSON" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,61 @@
+[
+  {
+    "keyword": "Feature",
+    "name": "Sample",
+    "elements": [
+      {
+        "keyword": "Scenario",
+        "type": "scenario",
+        "name": "first",
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a step",
+            "result": {
+              "status": "passed",
+              "duration": 1
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Scenario",
+        "type": "scenario",
+        "name": "second",
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a step",
+            "result": {
+              "status": "passed",
+              "duration": 1
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "another step",
+            "result": {
+              "status": "passed",
+              "duration": 1
+            }
+          }
+        ]
+      },
+      {
+        "keyword": "Scenario",
+        "type": "scenario",
+        "name": "third",
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "a step",
+            "result": {
+              "status": "failed",
+              "duration": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
