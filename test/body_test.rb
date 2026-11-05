@@ -2,6 +2,7 @@ require 'minitest/autorun'
 require 'tmpdir'
 require 'body'
 require_relative 'body_helpers'
+require_relative 'fake_gh'
 
 class BodyTest < Minitest::Test
   include BodyHelpers
