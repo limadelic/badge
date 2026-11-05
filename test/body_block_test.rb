@@ -1,6 +1,7 @@
 require 'minitest/autorun'
 require 'body'
 require_relative 'body_helpers'
+require_relative 'fake_gh'
 
 class BodyBlockTest < Minitest::Test
   include BodyHelpers

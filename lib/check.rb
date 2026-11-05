@@ -27,7 +27,8 @@ class Check
     end
 
     def shield(url)
-      "https://img.shields.io/endpoint?#{URI.encode_www_form('url' => url, 'cacheSeconds' => 60)}"
+      params = { 'url' => url, 'cacheSeconds' => 60, 'v' => ENV.fetch('GITHUB_RUN_ID', nil) }
+      "https://img.shields.io/endpoint?#{URI.encode_www_form(params)}"
     end
   end
 
